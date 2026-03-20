@@ -24,6 +24,39 @@ class OrderUseCase {
     }
   }
 
+  Future<Result<Order>> fetchOrderDetail({required String tradeNo}) async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      final order = await _adapter.fetchOrderDetail(_site, auth, tradeNo);
+      return Success(order);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
+  Future<Result<int>> checkOrderStatus({required String tradeNo}) async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      final status = await _adapter.checkOrderStatus(_site, auth, tradeNo);
+      return Success(status);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
+  Future<Result<List<PaymentMethod>>> fetchPaymentMethods() async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      final methods = await _adapter.fetchPaymentMethods(_site, auth);
+      return Success(methods);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
   Future<Result<bool>> cancelOrder({required String tradeNo}) async {
     try {
       final auth = await SecureStorage.instance.readAuthContext();

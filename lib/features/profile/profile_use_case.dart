@@ -7,6 +7,8 @@ import '../../core/result.dart';
 import '../../infrastructure/storage/cache_storage.dart';
 import '../../infrastructure/storage/secure_storage.dart';
 
+export '../../core/models/panel_user.dart' show SubscribeInfo;
+
 class ProfileUseCase {
   ProfileUseCase({required PanelAdapter adapter, required PanelSite site})
       : _adapter = adapter,
@@ -53,6 +55,43 @@ class ProfileUseCase {
       if (auth == null) return Failure(const AuthException('未登录'));
       final ok = await _adapter.changePassword(_site, auth, oldPassword, newPassword);
       return Success(ok);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
+  Future<Result<String>> resetSecurity() async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      final newToken = await _adapter.resetSecurity(_site, auth);
+      return Success(newToken);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
+  Future<Result<void>> updateUserSettings({
+    bool? remindExpire,
+    bool? remindTraffic,
+  }) async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      await _adapter.updateUserSettings(
+          _site, auth, UserSettings(remindExpire: remindExpire, remindTraffic: remindTraffic));
+      return const Success(null);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
+  Future<Result<SubscribeInfo>> fetchSubscribeInfo() async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      final info = await _adapter.fetchSubscribeInfo(_site, auth);
+      return Success(info);
     } catch (e) {
       return Failure(_toAppError(e));
     }

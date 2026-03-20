@@ -1,57 +1,46 @@
 import '../../core/errors/app_error.dart';
 import '../../core/interfaces/panel_adapter.dart';
 import '../../core/models/panel_site.dart';
-import '../../core/models/commercial/invite.dart';
+import '../../core/models/commercial/notice.dart';
 import '../../core/result.dart';
 import '../../infrastructure/storage/secure_storage.dart';
 
-class InviteUseCase {
-  InviteUseCase({required PanelAdapter adapter, required PanelSite site})
+class GiftCardUseCase {
+  GiftCardUseCase({required PanelAdapter adapter, required PanelSite site})
       : _adapter = adapter,
         _site = site;
 
   final PanelAdapter _adapter;
   final PanelSite _site;
 
-  Future<Result<InviteSummary>> fetchInviteSummary() async {
+  Future<Result<GiftCardPreview>> checkGiftCard({required String code}) async {
     try {
       final auth = await SecureStorage.instance.readAuthContext();
       if (auth == null) return Failure(const AuthException('未登录'));
-      final summary = await _adapter.fetchInviteSummary(_site, auth);
-      return Success(summary);
+      final preview = await _adapter.checkGiftCard(_site, auth, code);
+      return Success(preview);
     } catch (e) {
       return Failure(_toAppError(e));
     }
   }
 
-  Future<Result<bool>> generateInviteCode() async {
+  Future<Result<GiftCardRedeemResult>> redeemGiftCard({required String code}) async {
     try {
       final auth = await SecureStorage.instance.readAuthContext();
       if (auth == null) return Failure(const AuthException('未登录'));
-      final ok = await _adapter.generateInviteCode(_site, auth);
-      return Success(ok);
+      final result = await _adapter.redeemGiftCard(_site, auth, code);
+      return Success(result);
     } catch (e) {
       return Failure(_toAppError(e));
     }
   }
 
-  Future<Result<List<CommissionRecord>>> fetchCommissionDetails({int page = 1}) async {
+  Future<Result<List<GiftCardUsage>>> fetchHistory() async {
     try {
       final auth = await SecureStorage.instance.readAuthContext();
       if (auth == null) return Failure(const AuthException('未登录'));
-      final records = await _adapter.fetchCommissionDetails(_site, auth, page);
-      return Success(records);
-    } catch (e) {
-      return Failure(_toAppError(e));
-    }
-  }
-
-  Future<Result<bool>> transferCommissionToBalance({required int amount}) async {
-    try {
-      final auth = await SecureStorage.instance.readAuthContext();
-      if (auth == null) return Failure(const AuthException('未登录'));
-      final ok = await _adapter.transferCommissionToBalance(_site, auth, amount);
-      return Success(ok);
+      final history = await _adapter.fetchGiftCardHistory(_site, auth);
+      return Success(history);
     } catch (e) {
       return Failure(_toAppError(e));
     }

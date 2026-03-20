@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/commercial/plan_item.dart';
@@ -249,11 +250,18 @@ class _PlanCardState extends State<_PlanCard> {
     if (!context.mounted) return false;
     if (result.isSuccess) {
       final tradeNo = result.value;
-      final payResult = await uc.checkout(tradeNo: tradeNo, methodId: 1);
+      final methodId = await _selectPaymentMethod(context, uc);
+      if (methodId == null || !context.mounted) return false;
+      final payResult = await uc.checkout(tradeNo: tradeNo, methodId: methodId);
       if (context.mounted && payResult.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.of(context)!.orderCreated)),
-        );
+        final pr = payResult.value;
+        if (pr.redirectUrl != null && context.mounted) {
+          context.push('/payment-result', extra: pr);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(S.of(context)!.orderCreated)),
+          );
+        }
       }
       return true;
     }
@@ -266,6 +274,44 @@ class _PlanCardState extends State<_PlanCard> {
       );
     }
     return false;
+  }
+
+  Future<int?> _selectPaymentMethod(BuildContext ctx, StoreUseCase uc) async {
+    final methodsResult = await uc.fetchPaymentMethods();
+    if (!ctx.mounted) return null;
+    if (!methodsResult.isSuccess) return 1;
+    final methods = methodsResult.value.where((m) => m.enable).toList();
+    if (methods.isEmpty) return 1;
+    if (methods.length == 1) return methods.first.id;
+
+    return showModalBottomSheet<int>(
+      context: ctx,
+      builder: (context) {
+        final s = S.of(context)!;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(s.storePaymentMethodLabel,
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+              ...methods.map((m) => ListTile(
+                    leading: const Icon(Icons.payment),
+                    title: Text(m.name),
+                    subtitle: m.handlingFeePercent != null
+                        ? Text(
+                            '${(m.handlingFeePercent! * 100).toStringAsFixed(1)}%')
+                        : null,
+                    onTap: () => Navigator.pop(context, m.id),
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

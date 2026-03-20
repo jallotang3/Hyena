@@ -7,6 +7,10 @@ enum LogLevel { debug, info, warn, error }
 /// 结构化日志 — 脱敏规则：Token / 邮箱 / 明文 IP 不写入文件
 class AppLogger {
   static bool _verbose = false;
+  static const int _maxLogs = 200;
+  static final List<String> _recentLogs = [];
+
+  static List<String> get recentLogs => List.unmodifiable(_recentLogs);
 
   static void setVerbose(bool value) => _verbose = value;
 
@@ -38,6 +42,8 @@ class AppLogger {
     final sanitized = _sanitize(message);
     final formatted = '$emoji [${tag.name.toUpperCase()}] $sanitized';
 
+    _recentLogs.add(formatted);
+    if (_recentLogs.length > _maxLogs) _recentLogs.removeAt(0);
     developer.log(formatted, name: 'hyena', level: level.index * 300);
   }
 

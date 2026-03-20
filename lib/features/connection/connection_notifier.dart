@@ -8,16 +8,21 @@ import '../../core/models/traffic_stats.dart';
 class ConnectionNotifier extends ChangeNotifier {
   ConnectionNotifier(this.useCase) {
     _stateSub = useCase.stateStream.listen((_) => notifyListeners());
-    _trafficSub = useCase.trafficStream.listen((_) => notifyListeners());
+    _trafficSub = useCase.trafficStream.listen((stats) {
+      _lastTraffic = stats;
+      notifyListeners();
+    });
   }
 
   final ConnectionUseCase useCase;
   late final StreamSubscription<EngineState> _stateSub;
   late final StreamSubscription<TrafficStats> _trafficSub;
 
+  TrafficStats _lastTraffic = TrafficStats.zero;
+
   EngineState get state => useCase.state;
   ProxyNode? get currentNode => useCase.currentNode;
-  TrafficStats? get traffic => useCase.trafficStream.isBroadcast ? null : null;
+  TrafficStats get traffic => _lastTraffic;
 
   Future<void> connectToNode(ProxyNode node) async {
     await useCase.connect(node);

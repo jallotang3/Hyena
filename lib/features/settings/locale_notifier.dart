@@ -18,8 +18,10 @@ class LocaleNotifier extends ChangeNotifier {
 
   Future<void> setLocale(Locale locale) async {
     _locale = locale;
-    await AppPreferences.instance
-        .setLocale('${locale.languageCode}_${locale.countryCode ?? ''}');
+    final tag = locale.countryCode != null && locale.countryCode!.isNotEmpty
+        ? '${locale.languageCode}_${locale.countryCode}'
+        : locale.languageCode;
+    await AppPreferences.instance.setLocale(tag);
     notifyListeners();
   }
 

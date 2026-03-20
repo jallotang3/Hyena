@@ -14,12 +14,16 @@ import 'features/auth/auth_notifier.dart';
 import 'features/auth/auth_use_case.dart';
 import 'features/connection/connection_notifier.dart';
 import 'features/connection/connection_use_case.dart';
+import 'features/giftcard/giftcard_use_case.dart';
 import 'features/invite/invite_use_case.dart';
+import 'features/knowledge/knowledge_use_case.dart';
 import 'features/node/node_notifier.dart';
 import 'features/node/node_use_case.dart';
+import 'features/notice/notice_use_case.dart';
 import 'features/order/order_use_case.dart';
 import 'features/profile/profile_use_case.dart';
 import 'features/settings/locale_notifier.dart';
+import 'features/stat/stat_use_case.dart';
 import 'features/store/store_use_case.dart';
 import 'features/ticket/ticket_use_case.dart';
 import 'skins/skin_manager.dart';
@@ -62,6 +66,10 @@ Future<void> main() async {
   final ticketUseCase = TicketUseCase(adapter: adapter, site: site);
   final profileUseCase = ProfileUseCase(adapter: adapter, site: site);
   final inviteUseCase = InviteUseCase(adapter: adapter, site: site);
+  final giftCardUseCase = GiftCardUseCase(adapter: adapter, site: site);
+  final noticeUseCase = NoticeUseCase(adapter: adapter, site: site);
+  final knowledgeUseCase = KnowledgeUseCase(adapter: adapter, site: site);
+  final statUseCase = StatUseCase(adapter: adapter, site: site);
 
   AppLogger.i('Site: ${site.panelType} @ ${site.baseUrl}', tag: LogTag.general);
 
@@ -85,6 +93,10 @@ Future<void> main() async {
         Provider<TicketUseCase>.value(value: ticketUseCase),
         Provider<ProfileUseCase>.value(value: profileUseCase),
         Provider<InviteUseCase>.value(value: inviteUseCase),
+        Provider<GiftCardUseCase>.value(value: giftCardUseCase),
+        Provider<NoticeUseCase>.value(value: noticeUseCase),
+        Provider<KnowledgeUseCase>.value(value: knowledgeUseCase),
+        Provider<StatUseCase>.value(value: statUseCase),
       ],
       child: const HyenaApp(),
     ),

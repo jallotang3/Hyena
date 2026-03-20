@@ -206,6 +206,18 @@
 
   "diagnosticsTitle": "DIAGNOSTICS",
   "diagnosticsExport": "Export Logs",
+  "diagnosticsRun": "Run Diagnostics",
+  "diagnosticsEmpty": "No logs yet. Tap \"Run Diagnostics\" to start.",
+
+  "paymentTitle": "Payment",
+  "paymentSuccess": "Payment Successful!",
+  "paymentWaiting": "Waiting for Payment...",
+  "paymentWaitingHint": "Complete the payment in your browser. This page will update automatically.",
+  "paymentOpenBrowser": "Open Payment Page",
+  "paymentBackHome": "Back to Home",
+  "paymentViewOrders": "View Orders",
+
+  "orderDetail": "Order Detail",
 
   "navHome": "HOME",
   "navNodes": "NODES",

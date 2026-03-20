@@ -187,6 +187,18 @@
 
   "diagnosticsTitle": "诊断",
   "diagnosticsExport": "导出日志",
+  "diagnosticsRun": "运行诊断",
+  "diagnosticsEmpty": "暂无日志，点击「运行诊断」开始。",
+
+  "paymentTitle": "支付",
+  "paymentSuccess": "支付成功！",
+  "paymentWaiting": "等待支付...",
+  "paymentWaitingHint": "请在浏览器中完成支付，此页面将自动更新。",
+  "paymentOpenBrowser": "打开支付页面",
+  "paymentBackHome": "返回首页",
+  "paymentViewOrders": "查看订单",
+
+  "orderDetail": "订单详情",
 
   "navHome": "首页",
   "navNodes": "节点",

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/models/proxy_node.dart';
 import '../../../features/connection/connection_notifier.dart';
+import '../../../infrastructure/storage/preferences.dart';
 import '../../../l10n/app_localizations.dart';
 import '../node_notifier.dart';
 
@@ -134,7 +135,8 @@ class _NodeTab extends StatelessWidget {
       // 按 group 分组
       final groups = <String, List<ProxyNode>>{};
       for (final n in allNodes) {
-        groups.putIfAbsent(n.group.isNotEmpty ? n.group : '默认', () => []).add(n);
+        final s = S.of(context)!;
+        groups.putIfAbsent(n.group.isNotEmpty ? n.group : s.nodesFilterAll, () => []).add(n);
       }
 
       return RefreshIndicator(
@@ -303,7 +305,8 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-// NodeNotifier 需要一个仅刷新最爱标记的方法（无实际业务逻辑）
 extension NodeNotifierExt on NodeNotifier {
-  Future<void> setFavoriteAware(String nodeId) async {}
+  Future<void> setFavoriteAware(String nodeId) async {
+    await AppPreferences.instance.setLastNodeId(nodeId);
+  }
 }

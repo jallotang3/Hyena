@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../connection/connection_notifier.dart';
 import '../../auth/auth_use_case.dart';
+import '../../node/node_notifier.dart';
 import '../../../core/models/traffic_stats.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
@@ -378,7 +379,9 @@ class _NodeCard extends StatelessWidget {
                     ? const Color(0xFFFBBF24)
                     : tokens.colorMuted,
                 size: 20),
-            onPressed: () {/* P3: toggle favorite */},
+            onPressed: node == null
+                ? null
+                : () => context.read<NodeNotifier>().toggleFavorite(node.id),
           ),
           TextButton(
             onPressed: () => context.push('/nodes'),
