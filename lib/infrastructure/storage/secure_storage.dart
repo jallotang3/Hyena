@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/interfaces/panel_adapter.dart';
 
 /// 安全存储封装 — Token/密钥使用平台安全存储
 /// Android: Keystore | iOS: Keychain | Windows: DPAPI
@@ -32,4 +33,12 @@ class SecureStorage {
   Future<String?> read(String key) => _storage.read(key: key);
 
   Future<void> delete(String key) => _storage.delete(key: key);
+
+  /// 组装 AuthContext，方便 UseCase 直接使用
+  Future<AuthContext?> readAuthContext() async {
+    final authData = await readAuthData();
+    final email = await readEmail();
+    if (authData == null || email == null) return null;
+    return AuthContext(authData: authData, email: email);
+  }
 }

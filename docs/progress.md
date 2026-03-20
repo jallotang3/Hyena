@@ -2,7 +2,7 @@
 
 > 最后更新：2026-03-20
 
-## 当前状态：P1 骨架完成，P2 待开始
+## 当前状态：P2 商业闭环完成，P3 待开始
 
 ---
 
@@ -163,12 +163,57 @@ Hyena 参考 MagicLamp（`/Users/tianwanggaidihu/src/MagicLamp`）的 libbox 集
 
 ---
 
+## Phase 2 · 商业闭环（已完成）
+
+### P2-0 ✅ Hive 缓存层
+- `CacheStorage` 单例：节点（1h TTL）/ 用户（5min）/ 套餐（2h）缓存
+- `main.dart` 集成初始化
+
+### P2-1 ✅ 节点模块
+- `NodeUseCase`：fetchNodes（带缓存回落）、收藏管理
+- `NodeNotifier`：ChangeNotifier，支持搜索过滤 + 分组
+- `NodeListScreen`：Tab（全部 / 收藏）+ 搜索栏 + 分组列表 + 延迟显示
+
+### P2-2 ✅ 商店
+- `StoreUseCase`：fetchPlans / createOrder / checkout / checkCoupon
+- `StoreScreen`：套餐卡片（周期选择 / 价格 / 流量标签）+ 下单确认弹窗
+
+### P2-3 ✅ 订单中心
+- `OrderUseCase`：fetchOrders / cancelOrder
+- `OrderCenterScreen`：订单卡片（状态色 / 取消二次确认）
+
+### P2-4 ✅ 工单系统
+- `TicketUseCase`：fetch / detail / create / reply / close
+- `TicketListScreen`：新建弹窗（主题 / 优先级 / 内容）
+- `TicketDetailScreen`：气泡对话 UI + 回复输入框 + 关闭按钮
+
+### P2-5 ✅ 个人中心
+- `ProfileUseCase`：fetchUser（缓存）/ fetchTrafficLogs / changePassword
+- `ProfileScreen`：头像 / 流量进度条 / 余额卡片 / 菜单列表
+
+### P2-6 ✅ 邀请返佣
+- `InviteUseCase`：fetchInviteSummary / generateInviteCode
+- `InviteScreen`：统计卡 + 邀请码列表（一键复制）
+
+### P2-7 ✅ 设置页 + 语言切换
+- `LocaleNotifier`：运行时语言切换，持久化到 AppPreferences
+- `SettingsScreen`：语言选择 + 版本信息
+- `app.dart`：`Consumer2<AuthNotifier, LocaleNotifier>` 注入 `locale`
+
+### P2-8 ✅ AppRouter 补全
+- 所有占位路由替换为真实页面
+- HomeScreen 连接按钮：无节点 → 跳转 `/nodes`；有节点 → 直接连接
+- HomeScreen 重构为使用 `ConnectionNotifier`（代替 UseCase 直接调用）
+
+---
+
 ## 已知问题 / 技术债
 
 | 编号 | 描述 | 优先级 | 计划解决阶段 |
 |------|------|--------|-------------|
-| TD-01 | `withOpacity` 弃用警告（Flutter 3.x）→ 改用 `.withValues()` | 低 | P4 |
-| TD-02 | HomeScreen 连接按钮使用 Stub 节点，P2 需接入真实 NodeUseCase | 高 | P2 |
-| TD-03 | TrafficPolling 目前仅做 Stub，P3 接 Clash API `/traffic` | 中 | P3 |
-| TD-04 | go_router redirect 仅做简单 isLoggedIn 检查，P2 需完善中间件 | 中 | P2 |
-| TD-05 | `flutter_secure_storage` iOS Keychain 配置待验证 | 中 | P2 |
+| TD-03 | TrafficPolling 目前仅做 Stub，P3 接 sing-box 流量 Stream | 中 | P3 |
+| TD-06 | 支付宝 / 微信支付 URL 目前仅 SnackBar 显示，P3 接 WebView/URL launcher | 高 | P3 |
+| TD-07 | XboardAdapter 未实现全部方法（`fetchUserInfo`/`fetchNodes` 等），P3 补全 | 高 | P3 |
+| TD-08 | NodeListScreen 节点延迟测速（Ping）未实现 | 中 | P3 |
+| TD-09 | ProfileScreen 流量日志页面未完成 | 低 | P3 |
+| TD-10 | 桌面端 tray_manager / window_manager 集成未实现 | 中 | P4 |

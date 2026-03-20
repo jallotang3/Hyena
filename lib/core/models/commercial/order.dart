@@ -52,6 +52,9 @@ class Order {
   final String? callbackNo;
   final DateTime createdAt;
 
+  /// 订单唯一标识（tradeNo 别名，便于上层统一使用 .id）
+  String get id => tradeNo;
+
   bool get isPending => status == OrderStatus.pending;
   bool get isCompleted => status == OrderStatus.completed;
   bool get isCancelled => status == OrderStatus.cancelled;

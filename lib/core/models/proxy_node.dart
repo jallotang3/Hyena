@@ -47,6 +47,34 @@ class ProxyNode {
     );
   }
 
+  // ── JSON 序列化（用于 Hive 缓存）─────────────────────────────────────────
+
+  factory ProxyNode.fromJson(Map<String, dynamic> json) {
+    return ProxyNode(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      group: json['group'] as String? ?? '',
+      protocol: json['protocol'] as String,
+      address: json['address'] as String,
+      port: json['port'] as int,
+      extra: Map<String, dynamic>.from(json['extra'] as Map? ?? {}),
+      latency: json['latency'] as int?,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'group': group,
+        'protocol': protocol,
+        'address': address,
+        'port': port,
+        'extra': extra,
+        'latency': latency,
+        'isFavorite': isFavorite,
+      };
+
   @override
   String toString() => 'ProxyNode($protocol://$address:$port [$name])';
 }

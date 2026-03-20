@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'connection_use_case.dart';
+import '../../core/models/proxy_node.dart';
 import '../../core/models/traffic_stats.dart';
 
 /// ChangeNotifier 包装器 — 让 Provider Consumer 感知连接状态变化
@@ -15,6 +16,23 @@ class ConnectionNotifier extends ChangeNotifier {
   late final StreamSubscription<TrafficStats> _trafficSub;
 
   EngineState get state => useCase.state;
+  ProxyNode? get currentNode => useCase.currentNode;
+  TrafficStats? get traffic => useCase.trafficStream.isBroadcast ? null : null;
+
+  Future<void> connectToNode(ProxyNode node) async {
+    await useCase.connect(node);
+    notifyListeners();
+  }
+
+  Future<void> disconnect() async {
+    await useCase.disconnect();
+    notifyListeners();
+  }
+
+  Future<void> switchMode(RoutingMode mode) async {
+    await useCase.switchMode(mode);
+    notifyListeners();
+  }
 
   @override
   void dispose() {

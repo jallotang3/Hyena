@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../connection/connection_use_case.dart';
+import '../../connection/connection_notifier.dart';
 import '../../auth/auth_use_case.dart';
-import '../../../core/models/proxy_node.dart';
 import '../../../core/models/traffic_stats.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
@@ -29,15 +28,16 @@ class _HomeScreenState extends State<HomeScreen> {
   String _formatTotal(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
-    if (bytes < 1024 * 1024 * 1024)
+    if (bytes < 1024 * 1024 * 1024) {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = ThemeTokenProvider.tokensOf(context);
-    final conn = context.watch<ConnectionUseCase>();
+    final conn = context.watch<ConnectionNotifier>();
     final auth = context.watch<AuthUseCase>();
     final user = auth.currentUser;
 
@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Connection button
                     StreamBuilder<EngineState>(
-                      stream: conn.stateStream,
+                      stream: conn.useCase.stateStream,
                       initialData: conn.state,
                       builder: (context, snap) {
                         final state = snap.data ?? EngineState.idle;
@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Traffic stats
                     StreamBuilder<TrafficStats>(
-                      stream: conn.trafficStream,
+                      stream: conn.useCase.trafficStream,
                       initialData: TrafficStats.zero,
                       builder: (context, snap) {
                         final stats = snap.data ?? TrafficStats.zero;
@@ -176,7 +176,7 @@ class _ConnectButton extends StatelessWidget {
   const _ConnectButton(
       {required this.state, required this.conn, required this.tokens});
   final EngineState state;
-  final ConnectionUseCase conn;
+  final ConnectionNotifier conn;
   final ThemeTokens tokens;
 
   @override
@@ -207,9 +207,12 @@ class _ConnectButton extends StatelessWidget {
               if (isConnected) {
                 await conn.disconnect();
               } else {
-                // Stub: 用默认测试节点连接（P2 会替换为节点选择）
-                final stubNode = _stubNode();
-                await conn.connect(stubNode);
+                // 无已选节点时，弹出节点列表
+                if (conn.currentNode == null) {
+                  context.push('/nodes');
+                } else {
+                  await conn.connectToNode(conn.currentNode!);
+                }
               }
             },
       child: Container(
@@ -223,7 +226,7 @@ class _ConnectButton extends StatelessWidget {
           boxShadow: isConnected
               ? [
                   BoxShadow(
-                      color: tokens.colorPrimary.withOpacity(0.3),
+                      color: tokens.colorPrimary.withValues(alpha: 0.3),
                       blurRadius: 24,
                       spreadRadius: 4),
                 ]
@@ -266,17 +269,6 @@ class _ConnectButton extends StatelessWidget {
     );
   }
 
-  ProxyNode _stubNode() {
-    return const ProxyNode(
-      id: 'stub-01',
-      name: 'Tokyo-01 [Stub]',
-      group: 'Debug',
-      protocol: 'vless',
-      address: '127.0.0.1',
-      port: 443,
-      extra: {'uuid': '00000000-0000-0000-0000-000000000000'},
-    );
-  }
 }
 
 class _StatCard extends StatelessWidget {
@@ -307,7 +299,7 @@ class _StatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 16),
@@ -342,7 +334,7 @@ class _StatCard extends StatelessWidget {
 
 class _NodeCard extends StatelessWidget {
   const _NodeCard({required this.conn, required this.tokens});
-  final ConnectionUseCase conn;
+  final ConnectionNotifier conn;
   final ThemeTokens tokens;
 
   @override
@@ -404,7 +396,7 @@ class _NodeCard extends StatelessWidget {
 
 class _RoutingModeCard extends StatelessWidget {
   const _RoutingModeCard({required this.conn, required this.tokens});
-  final ConnectionUseCase conn;
+  final ConnectionNotifier conn;
   final ThemeTokens tokens;
 
   @override
@@ -428,7 +420,7 @@ class _RoutingModeCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: List.generate(modes.length, (i) {
-              final selected = conn.currentMode == modes[i];
+              final selected = conn.useCase.currentMode == modes[i];
               return Expanded(
                 child: GestureDetector(
                   onTap: () => conn.switchMode(modes[i]),
@@ -438,13 +430,13 @@ class _RoutingModeCard extends StatelessWidget {
                     margin: EdgeInsets.only(right: i < modes.length - 1 ? 6 : 0),
                     decoration: BoxDecoration(
                       color: selected
-                          ? tokens.colorPrimary.withOpacity(0.15)
+                          ? tokens.colorPrimary.withValues(alpha: 0.15)
                           : tokens.colorSurfaceVariant,
                       borderRadius:
                           BorderRadius.circular(tokens.radiusSmall),
                       border: selected
                           ? Border.all(
-                              color: tokens.colorPrimary.withOpacity(0.5))
+                              color: tokens.colorPrimary.withValues(alpha: 0.5))
                           : null,
                     ),
                     alignment: Alignment.center,

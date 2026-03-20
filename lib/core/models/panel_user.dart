@@ -42,6 +42,34 @@ class PanelUser {
   /// 剩余流量（字节）
   int get trafficRemaining => (trafficTotal - trafficUsed).clamp(0, trafficTotal);
 
+  factory PanelUser.fromJson(Map<String, dynamic> json) {
+    return PanelUser(
+      email: json['email'] as String,
+      trafficUsed: json['trafficUsed'] as int,
+      trafficTotal: json['trafficTotal'] as int,
+      expireAt: json['expireAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['expireAt'] as int)
+          : null,
+      planName: json['planName'] as String? ?? '',
+      balance: json['balance'] as int? ?? 0,
+      commissionBalance: json['commissionBalance'] as int? ?? 0,
+      planId: json['planId'] as int?,
+      uuid: json['uuid'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'email': email,
+        'trafficUsed': trafficUsed,
+        'trafficTotal': trafficTotal,
+        'expireAt': expireAt?.millisecondsSinceEpoch,
+        'planName': planName,
+        'balance': balance,
+        'commissionBalance': commissionBalance,
+        'planId': planId,
+        'uuid': uuid,
+      };
+
   PanelUser copyWith({
     String? email,
     int? trafficUsed,
