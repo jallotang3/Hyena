@@ -1,6 +1,6 @@
 # Hyena 多面板 VPN 客户端 · 系统设计方案（V1）
 
-> **文档版本**: v1.2 | **状态**: 评审中 | **更新时间**: 2026-03
+> **文档版本**: v1.3 | **状态**: 评审中 | **更新时间**: 2026-03
 
 ---
 
@@ -31,19 +31,25 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                   皮肤层 Skin Layer                       │
-│  ThemeTokenProvider │ SkinComponentRegistry │ LayoutPreset │
+│                    视图层 View Layer（可替换）              │
+│  SkinPageFactory 提供整页覆盖                              │
+│  Pages 只读取 Controller 状态、只调用 Controller 方法       │
+│  不直接接触 UseCase / Adapter / Storage                    │
 ├──────────────────────────────────────────────────────────┤
-│                   展示层 UI Layer                         │
-│  Pages（Splash/Login/Home/Nodes/Store/Order/Ticket/     │
-│         Invite/Profile/Settings/Diag/Notice/Knowledge） │
-│  消费 ViewModel，不直接依赖皮肤实现细节                    │
+│                    控制层 Controller Layer（固定 API）      │
+│  ScreenController（每个页面对应一个 Controller）            │
+│  HomeController │ NodeController │ StoreController │ ...  │
+│  暴露：状态属性(getter) + 操作方法(action)                 │
+│  内部编排 UseCase + Notifier，View 不感知                  │
+├──────────────────────────────────────────────────────────┤
+│                    皮肤层 Skin Layer                       │
+│  ThemeTokens │ ThemeTokenProvider │ SkinPageFactory        │
 ├──────────────────────────────────────────────────────────┤
 │                   应用层 Application Layer                 │
-│  AuthUseCase │ NodeUseCase │ ConnectionUseCase │ SiteUseCase│
+│  AuthUseCase │ NodeUseCase │ ConnectionUseCase │ ...       │
 ├──────────────────────────────────────────────────────────┤
 │                   领域层 Domain Layer                      │
-│  PanelAdapter │ CoreEngine │ SkinContract │ 统一模型        │
+│  PanelAdapter │ CoreEngine │ 统一模型                      │
 ├──────────────────┬────────────────────────────────────────┤
 │  面板基础设施层   │          内核基础设施层                  │
 │  XboardAdapter   │  SingboxDriver │ EngineRegistry         │
@@ -54,47 +60,50 @@
 └──────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 数据流
+### 2.2 数据流（Controller/View 分离）
 
 ```
-用户操作
+用户操作（点击按钮、下拉刷新等）
   │
   ▼
-UI Page（消费 ViewModel）
-  │── 触发 Action ──▶ UseCase
-                          │
-                ┌─────────┴──────────┐
-                ▼                    ▼
-         PanelGateway          ConnectionUseCase
-           │                         │
-           ▼                         ▼
-     PanelAdapter            EngineConfigBuilder
-     (XboardAdapter)                 │
-           │                         ▼
-           ▼                   CoreEngine / EngineDriver
-     RawNode[]              (SingboxDriver via FFI/libbox)
-           │
-           ▼
-     NodeNormalizer
-           │
-           ▼
-       ProxyNode[]  ──────────────▶ 缓存 + UI 展示
+View（Page Widget）                       ◀── SkinPageFactory 可替换整个页面
+  │                                            但 Controller API 不变
+  │── 调用 Controller.action() ──▶ ScreenController
+                                        │
+                                        │── 编排 UseCase 方法
+                                        │── 管理 UI 状态
+                                        │── 通知 View 刷新
+                                        │
+                                        ▼
+                                   UseCase 层
+                                        │
+                              ┌─────────┴──────────┐
+                              ▼                    ▼
+                       PanelAdapter          CoreEngine
+                       (XboardAdapter)       (SingboxDriver)
+                              │                    │
+                              ▼                    ▼
+                        领域模型            连接/流量/日志
 ```
+
+**关键约束**：View 层永远看不到 UseCase / PanelAdapter / SecureStorage，只通过 Controller 提供的状态和操作与业务层交互。
 
 ### 2.3 皮肤系统关系
 
 ```
 SkinPackage (skinId)
-  ├── theme_tokens.dart   → ThemeTokenProvider → MaterialTheme
-  ├── components/         → SkinComponentRegistry → 组件槽位装配
-  ├── assets/             → 图标 / 图片 / 字体资源
-  └── skin_manifest.json  → 皮肤合约版本 + 槽位声明
+  ├── theme_tokens.dart   → ThemeTokens → ThemeTokenProvider → MaterialTheme
+  ├── page_factory.dart   → SkinPageFactory → 整页覆盖（可选）
+  └── assets/             → 图标 / 图片 / 字体资源
 
         SkinManager
             │
      ┌──────┴───────┐
      ▼              ▼
-DefaultSkin      BrandXSkin   (实现相同合约)
+DefaultSkin      BrandXSkin
+  │                  │
+  ├─ ThemeTokens     ├─ ThemeTokens（品牌色/字体）
+  └─ 默认页面实现     └─ SkinPageFactory（覆盖部分/全部页面）
 ```
 
 ---
@@ -103,17 +112,16 @@ DefaultSkin      BrandXSkin   (实现相同合约)
 
 ### 3.1 皮肤层（Skin Layer）
 
-皮肤层是 UI 与业务之间的样式隔离层，独立于业务逻辑存在。
+皮肤层是 UI 与业务之间的样式 + 页面隔离层，独立于业务逻辑存在。
 
 #### 3.1.1 核心组件
 
 | 组件 | 职责 |
 |------|------|
 | `SkinManager` | 按 skinId 加载皮肤包；加载失败自动回退到 default skin |
-| `ThemeTokenProvider` | 将皮肤令牌注入 Flutter MaterialTheme，全局可用 |
-| `SkinComponentRegistry` | 维护组件槽位 → 具体 Widget 实现的映射表 |
-| `LayoutPresetResolver` | 根据平台（mobile/desktop）返回对应布局预设 |
-| `SkinContract` | 皮肤合约：版本号 + 可定制页面清单 + 组件槽位清单 |
+| `ThemeTokenProvider` | 将 ThemeTokens 注入 Flutter MaterialTheme，全局可用 |
+| `SkinPageFactory` | 维护 页面路由 → 自定义 Page Widget 的映射；未注册的页面使用默认实现 |
+| `SkinContract` | 皮肤合约接口：版本号 + ThemeTokens + 可选 SkinPageFactory |
 
 #### 3.1.2 皮肤合约（Skin Contract）定义示意
 
@@ -129,27 +137,21 @@ abstract class SkinContract {
   /// 主题令牌：颜色/字体/间距/圆角
   ThemeTokens get themeTokens;
 
-  /// 可定制页面集合（未声明的页面使用 default 实现）
-  Set<SkinPage> get supportedPages;
-
-  /// 组件槽位实现（未注册的槽位使用 default 实现）
-  Map<SkinSlot, WidgetBuilder> get componentOverrides;
-
-  /// 资源包路径（图标/图片/字体）
-  String get assetBasePath;
+  /// 页面工厂：可覆盖部分或全部页面的 Widget 实现
+  /// 返回 null 的页面使用默认实现
+  SkinPageFactory get pageFactory;
 }
 
-/// 可定制页面枚举
-enum SkinPage { login, nodeList, connection, settings, splash }
-
-/// 组件槽位枚举（V1 有限槽位，避免过度开放）
-enum SkinSlot {
-  connectButton,    // 连接/断开按钮
-  nodeCard,         // 节点列表卡片
-  trafficBadge,     // 流量徽章
-  statusIndicator,  // 连接状态指示器
-  bottomNavBar,     // 底部导航栏（移动端）
-  sideNavBar,       // 侧边导航（桌面端）
+/// 页面工厂接口
+/// 每个方法接收对应的 ScreenController，返回 Widget 或 null（使用默认页面）
+abstract class SkinPageFactory {
+  Widget? homePage(HomeController controller);
+  Widget? loginPage(AuthController controller);
+  Widget? nodePage(NodeController controller);
+  Widget? storePage(StoreController controller);
+  Widget? profilePage(ProfileController controller);
+  Widget? settingsPage(SettingsController controller);
+  // ... 其他页面
 }
 ```
 
@@ -160,39 +162,91 @@ enum SkinSlot {
 - 不兼容时降级到 default skin，日志记录原因。
 - 皮肤包升级独立于业务版本，可单独发布。
 
-### 3.2 展示层（UI Layer）
+### 3.2 控制层（Controller Layer）
 
-- 页面仅消费 UseCase 暴露的 ViewModel（纯数据，无样式）。
-- 所有样式从 `ThemeTokenProvider` 或 `SkinComponentRegistry` 获取，禁止硬编码颜色/字体。
-- 状态管理：V1 统一使用 **Provider**（参考 MagicLamp 实践）。
-- 响应式布局：通过 `LayoutPresetResolver` 分离移动端与桌面端布局逻辑。
+Controller 层是 View 与业务层（UseCase）之间的**固定 API 边界**。每个页面对应一个 `ScreenController`，其 API 一旦发布即为稳定契约。
+
+#### 3.2.1 设计原则
+
+1. **View 只认 Controller**：页面组件禁止直接引用 UseCase / Adapter / Storage。
+2. **Controller API 固定**：对外暴露的属性和方法签名稳定，View 和 Skin 开发者可依赖。
+3. **内部自由编排**：Controller 内部如何调用 UseCase、如何缓存状态，属于实现细节。
+4. **状态通知**：Controller 继承 `ChangeNotifier`，配合 Provider 驱动 View 刷新。
+
+#### 3.2.2 Controller 清单
+
+| Controller | 职责 | 对应页面 |
+|------------|------|----------|
+| `SplashController` | 会话恢复、自动连接、初始化检查 | 启动页 |
+| `AuthController` | 登录、注册、忘记密码、表单验证 | 登录/注册/忘记密码 |
+| `HomeController` | 连接状态、流量统计、当前节点、连接时长、快速操作 | 连接首页 |
+| `NodeController` | 节点列表、搜索、排序、测速、收藏 | 节点列表 |
+| `StoreController` | 套餐列表、优惠码验证、下单 | 商店/订单确认 |
+| `OrderController` | 订单列表、订单详情、支付、取消 | 订单中心/详情/结果 |
+| `TicketController` | 工单列表、创建、回复、关闭 | 工单列表/新建/详情 |
+| `ProfileController` | 用户信息、订阅、密码修改、邀请管理、礼品卡 | 用户中心/邀请/礼品卡 |
+| `SettingsController` | 偏好设置、路由模式、自动连接、皮肤切换 | 设置 |
+| `DiagController` | 日志读取、导出、诊断运行 | 诊断 |
+| `NoticeController` | 公告列表、阅读状态 | 公告 |
+| `KnowledgeController` | 知识库列表、搜索、文章详情 | 帮助中心/文章 |
+| `TrafficChartController` | 月流量数据、图表数据 | 流量统计 |
+
+#### 3.2.3 Controller API 示意
+
+```dart
+/// HomeController —— 连接首页控制器
+class HomeController extends ChangeNotifier {
+  // ── 状态属性（getter only）──
+  EngineState get connectionState;
+  ProxyNode? get currentNode;
+  TrafficStats get trafficStats;
+  Duration get connectionDuration;
+  String? get subscriptionSummary;
+  bool get isConnecting;
+
+  // ── 操作方法 ──
+  Future<void> connect();
+  Future<void> disconnect();
+  Future<void> switchNode(ProxyNode node);
+  Future<void> switchRoutingMode(RoutingMode mode);
+  Future<void> refreshTraffic();
+}
+```
+
+### 3.3 视图层（View Layer）
+
+- 页面（Page Widget）**只通过 Controller 交互**，禁止直接引用 UseCase / Adapter。
+- 所有样式从 `ThemeTokenProvider` 获取，禁止硬编码颜色/字体。
+- 状态管理：V1 统一使用 **Provider**（`ChangeNotifierProvider` 包装 Controller）。
+- 皮肤定制：`SkinPageFactory` 可替换任意页面的 Widget 实现，但 Controller API 不变。
 
 **页面清单（V1）**
 
-| 页面 | 路由 | 说明 |
-|------|------|------|
-| 启动页 | `/splash` | 品牌动画、首次引导检测 |
-| 注册 | `/register` | 邮箱注册（含邀请码） |
-| 登录 | `/login` | 账号密码登录 |
-| 忘记密码 | `/forgot-password` | 邮件验证码重置 |
-| 连接首页 | `/home` | 当前节点、连接状态、实时流量、套餐概览 |
-| 节点列表 | `/nodes` | 节点展示、测速、收藏、搜索 |
-| 商店 | `/store` | 套餐列表与周期选择 |
-| 订单确认 | `/order/confirm` | 套餐快照、优惠码、支付方式选择 |
-| 支付结果 | `/order/result` | 支付成功/失败结果页 |
-| 订单中心 | `/orders` | 历史订单列表 |
-| 订单详情 | `/orders/:tradeNo` | 单笔订单详情 |
-| 工单列表 | `/tickets` | 工单列表 |
-| 新建工单 | `/tickets/new` | 提交工单 |
-| 工单详情 | `/tickets/:id` | 对话式工单详情与回复 |
-| 用户中心 | `/profile` | 用户信息、订阅详情、安全设置 |
-| 邀请推广 | `/invite` | 邀请码、佣金统计、提现 |
-| 礼品卡 | `/giftcard` | 礼品卡兑换与历史 |
-| 公告 | `/notices` | 公告列表 |
-| 帮助中心 | `/help` | 知识库分类与搜索 |
-| 帮助文章 | `/help/:id` | 知识库文章详情 |
-| 设置 | `/settings` | 主题、路由策略、自动连接、内核选择 |
-| 诊断 | `/diagnostics` | 日志查看与导出 |
+| 页面 | 路由 | Controller | 说明 |
+|------|------|------------|------|
+| 启动页 | `/splash` | `SplashController` | 品牌动画、首次引导检测 |
+| 注册 | `/register` | `AuthController` | 邮箱注册（含邀请码） |
+| 登录 | `/login` | `AuthController` | 账号密码登录 |
+| 忘记密码 | `/forgot-password` | `AuthController` | 邮件验证码重置 |
+| 连接首页 | `/home` | `HomeController` | 当前节点、连接状态、实时流量、套餐概览 |
+| 节点列表 | `/nodes` | `NodeController` | 节点展示、测速、收藏、搜索 |
+| 商店 | `/store` | `StoreController` | 套餐列表与周期选择 |
+| 订单确认 | `/order/confirm` | `StoreController` | 套餐快照、优惠码、支付方式选择 |
+| 支付结果 | `/order/result` | `OrderController` | 支付成功/失败结果页 |
+| 订单中心 | `/orders` | `OrderController` | 历史订单列表 |
+| 订单详情 | `/orders/:tradeNo` | `OrderController` | 单笔订单详情 |
+| 工单列表 | `/tickets` | `TicketController` | 工单列表 |
+| 新建工单 | `/tickets/new` | `TicketController` | 提交工单 |
+| 工单详情 | `/tickets/:id` | `TicketController` | 对话式工单详情与回复 |
+| 用户中心 | `/profile` | `ProfileController` | 用户信息、订阅详情、安全设置 |
+| 邀请推广 | `/invite` | `ProfileController` | 邀请码、佣金统计、提现 |
+| 礼品卡 | `/giftcard` | `ProfileController` | 礼品卡兑换与历史 |
+| 公告 | `/notices` | `NoticeController` | 公告列表 |
+| 帮助中心 | `/help` | `KnowledgeController` | 知识库分类与搜索 |
+| 帮助文章 | `/help/:id` | `KnowledgeController` | 知识库文章详情 |
+| 设置 | `/settings` | `SettingsController` | 主题、路由策略、自动连接、内核选择 |
+| 诊断 | `/diagnostics` | `DiagController` | 日志查看与导出 |
+| 流量统计 | `/traffic-chart` | `TrafficChartController` | 月流量统计图表 |
 
 ### 3.3 应用层（Application Layer）
 
@@ -1241,16 +1295,30 @@ lib/
       config_builders/           # EngineConfigBuilder 各内核实现
 
   skins/
-    skin_manager.dart            # SkinManager
-    skin_component_registry.dart # SkinComponentRegistry
-    theme_token_provider.dart    # ThemeTokenProvider
-    layout_preset_resolver.dart  # LayoutPresetResolver
+    skin_manager.dart            # SkinManager：皮肤加载/切换
+    skin_contract.dart           # SkinContract 抽象接口
+    skin_page_factory.dart       # SkinPageFactory 抽象接口
+    theme_token_provider.dart    # ThemeTokenProvider：Token → MaterialTheme
     default/                     # 默认皮肤包（完整实现）
       theme_tokens.dart
-      components/
+      default_page_factory.dart  # 返回 null（使用所有默认页面）
       assets/
-      skin_manifest.json
     brand_x/                     # 示例品牌皮肤（V2）
+
+  controllers/                   # ScreenController 层（固定 API）
+    home_controller.dart
+    auth_controller.dart
+    node_controller.dart
+    store_controller.dart
+    order_controller.dart
+    ticket_controller.dart
+    profile_controller.dart
+    settings_controller.dart
+    diag_controller.dart
+    notice_controller.dart
+    knowledge_controller.dart
+    traffic_chart_controller.dart
+    splash_controller.dart
 
   l10n/                          # 多语言翻译文件（ARB）
     app_en.arb                   # 英语（基准）
@@ -1299,7 +1367,7 @@ templates/
 | **阶段 1** 架构骨架 | 项目脚手架；领域层接口；XboardAdapter（认证+订阅）；SingboxDriver stub；SkinManager 框架；注册→登录→订阅→连接 Demo | 串行（其他阶段前置） | 三层扩展框架验证 |
 | **阶段 2** 商业闭环 | XboardAdapter 全接口（套餐/订单/工单/邀请/礼品卡/公告/知识库）；商店/订单/工单/用户中心/邀请推广全部页面 | 依赖阶段 1 | **可商业运营** |
 | **阶段 3** 节点与连接 | 测速；收藏；状态机完整实现；自动重连；路由切换；日志导出；流量统计图表 | 可与阶段 2 并行 | 核心连接能力完整 |
-| **阶段 4** 皮肤系统 + 多语言 | ThemeTokenProvider；SkinComponentRegistry；default skin 全页面（含商业页面）；皮肤合约文档；i18n 框架接入（zh_CN + en ARB 全页面覆盖）；设置页语言切换 | 可与阶段 3 并行 | default skin 可用；双语支持 |
+| **阶段 4** Controller/View 分离 + 皮肤系统 | 抽取 13 个 ScreenController；改造所有页面只通过 Controller 交互；SkinPageFactory 整页覆盖框架；编写界面设计规范(skin-contract.md)；i18n 全页面覆盖 | 依赖阶段 3 | Controller API 稳定；皮肤可替换 |
 | **阶段 5** CI/CD | ci.yml；build-template.yml；release.yml；Android + Windows 制品验证；缓存策略 | 依赖阶段 1 | 自动化构建可用 |
 | **阶段 6** 第二面板 | v2board Adapter；验证适配器扩展成本 | 依赖阶段 3 | 多面板扩展验证 |
 | **阶段 7** 品牌皮肤 | brand_x 示例皮肤；皮肤预览工具 | 依赖阶段 4 | 皮肤定制交付验证 |
@@ -1317,3 +1385,4 @@ templates/
 | ADR-005 | UI 皮肤化架构，与业务逻辑解耦 | 品牌定制不触碰业务代码；代价是皮肤合约需严格管理，过度开放会增加维护负担 |
 | ADR-006 | Provider 作为 V1 状态管理方案 | 团队熟悉度高，MagicLamp 已有实践；代价是复杂异步状态管理可读性不如 Riverpod |
 | ADR-007 | ARB + flutter gen-l10n 作为 i18n 方案 | Flutter 官方推荐，强类型生成代码防拼写错误；新增语言只需加 ARB 文件；代价是每次修改文案需重新生成，CI 需加 gen-l10n 步骤 |
+| ADR-008 | Controller/View 分离 + Page Override 皮肤方案 | View 只通过固定 Controller API 交互，不直接引用 UseCase；SkinPageFactory 可整页覆盖，UI 设计者无需了解业务内部；代价是需维护 Controller 层和界面设计规范 |

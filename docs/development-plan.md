@@ -1,8 +1,8 @@
 # Hyena · 开发计划（V1）
 
-> **文档版本**: v1.0 | **状态**: 草稿 | **更新时间**: 2026-03
+> **文档版本**: v1.1 | **状态**: 草稿 | **更新时间**: 2026-03
 >
-> 本文档基于需求分析（v1.2）、系统设计（v1.2）及 Xboard 客户端 OpenAPI 规范制定。
+> 本文档基于需求分析（v1.2）、系统设计（v1.3）及 Xboard 客户端 OpenAPI 规范制定。
 
 ---
 
@@ -23,7 +23,7 @@
 P1 架构骨架（串行，所有阶段前置）
  ├─▶ P2 商业闭环          （依赖 P1，优先级最高）
  ├─▶ P3 节点与连接完善    （依赖 P1，可与 P2 并行）
- ├─▶ P4 皮肤 + 多语言     （依赖 P1，可与 P2/P3 并行）
+ ├─▶ P4 Controller/View 分离 + 皮肤（依赖 P3，架构升级）
  └─▶ P5 CI/CD 模板化      （依赖 P1，可早期并行启动）
       └─▶ P6 第二面板      （依赖 P3，V1 验证扩展性）
            └─▶ P7 品牌皮肤  （依赖 P4）
@@ -234,37 +234,72 @@ P1 架构骨架（串行，所有阶段前置）
 
 ---
 
-## 5. Phase 4 · 皮肤系统 + 多语言
+## 5. Phase 4 · Controller/View 分离 + 皮肤系统
 
-**目标**：ThemeTokenProvider、SkinComponentRegistry 完整可用；default skin 覆盖全部 V1 页面；zh_CN + en 双语 ARB 全覆盖；设置页语言切换生效。
+**目标**：将所有页面的业务逻辑抽取到 ScreenController 层，View 只通过固定 Controller API 交互；完成 SkinPageFactory 整页覆盖框架；编写界面设计规范文档。
 
-**预计工期**：3～4 周（可与 P3 并行）
+**预计工期**：4～5 周（依赖 P3）
 
-### 5.1 皮肤系统完整实现
-
-| # | 任务 | 规模 | 说明 |
-|---|------|------|------|
-| 4.1 | `ThemeTokenProvider` 完整实现（颜色/字体/间距/圆角 Token 挂载到 MaterialTheme） | M | |
-| 4.2 | `SkinComponentRegistry`（组件槽位装配：connectButton / nodeCard / trafficBadge / statusIndicator / bottomNavBar / sideNavBar） | M | |
-| 4.3 | `LayoutPresetResolver`（mobile / desktop 布局预设，响应式切换） | M | |
-| 4.4 | default skin 全页面覆盖（登录 / 注册 / 首页 / 节点 / 商店 / 订单 / 工单 / 邀请 / 用户中心 / 设置 / 诊断 / 启动页） | L | `skins/default/` |
-| 4.5 | `skin_manifest.json` 规范输出（contractVersion + 槽位声明） | S | |
-| 4.6 | 皮肤合约文档（`docs/skin-contract.md`）输出 | M | |
-| 4.7 | 皮肤加载版本校验（contractVersion 不兼容时降级 default，日志记录） | S | |
-| 4.8 | Golden Test：ThemeToken 注入后 Widget 颜色正确性验证 | M | |
-
-### 5.2 多语言（i18n/l10n）
+### 5.1 Controller 层抽取
 
 | # | 任务 | 规模 | 说明 |
 |---|------|------|------|
-| 4.9 | `l10n.yaml` 配置 + `flutter gen-l10n` 接入（`app_en.arb` 为基准） | S | |
-| 4.10 | `app_en.arb` 完整翻译 Key 定义（覆盖全部 UI 文案：认证/连接/节点/商店/订单/工单/邀请/设置/错误提示/空状态/Toast） | L | 约 150～200 个 Key |
-| 4.11 | `app_zh_CN.arb` 简体中文翻译填写 | L | |
-| 4.12 | `LocaleNotifier`（语言切换 + SharedPreferences 持久化 + MaterialApp.locale 联动） | M | `features/settings/locale_notifier.dart` |
-| 4.13 | 设置页语言切换 UI（System / 简体中文 / English 三选项，立即生效） | S | |
-| 4.14 | 全局文案审查：扫描禁止硬编码（`rg '"[^"]*[\u4e00-\u9fa5]'` 检查中文硬编码） | M | |
-| 4.15 | 日期/数字/货币格式化统一使用 `intl.DateFormat` + Locale | S | |
-| 4.16 | CI 中加入 `flutter gen-l10n` 步骤，保证 ARB 修改后自动生成代码 | S | |
+| 4.1 | `HomeController` 抽取（连接状态/流量/当前节点/连接时长/连接/断开/切换节点/切换路由） | M | 从 `HomeScreen` + `ConnectionNotifier` 抽取 |
+| 4.2 | `AuthController` 抽取（登录/注册/忘记密码/表单验证/加载状态） | M | 从 `LoginScreen`/`RegisterScreen`/`ForgotPasswordScreen` 抽取 |
+| 4.3 | `NodeController` 抽取（节点列表/搜索/排序/测速/收藏/选择节点） | M | 从 `NodeListScreen` + `NodeNotifier` 抽取 |
+| 4.4 | `StoreController` 抽取（套餐列表/优惠码验证/下单/周期选择） | M | 从 `StoreScreen` + `OrderConfirmScreen` 抽取 |
+| 4.5 | `OrderController` 抽取（订单列表/详情/支付/取消/轮询） | M | 从 `OrderListScreen`/`OrderDetailScreen` 抽取 |
+| 4.6 | `TicketController` 抽取（工单列表/创建/回复/关闭） | M | 从 `TicketListScreen`/`TicketDetailScreen`/`NewTicketScreen` 抽取 |
+| 4.7 | `ProfileController` 抽取（用户信息/订阅/改密/邀请/礼品卡） | M | 从 `ProfileScreen`/`InviteScreen`/`GiftCardScreen` 抽取 |
+| 4.8 | `SettingsController` 抽取（偏好设置/路由模式/自动连接/皮肤切换） | S | 从 `SettingsScreen` 抽取 |
+| 4.9 | `DiagController` 抽取（日志列表/导出/诊断运行） | S | 从 `DiagnosticsScreen` 抽取 |
+| 4.10 | `NoticeController` 抽取（公告列表/阅读状态） | S | 从 `NoticeListScreen` 抽取 |
+| 4.11 | `KnowledgeController` 抽取（知识库列表/搜索/详情） | S | 从 `KnowledgeListScreen`/`KnowledgeDetailScreen` 抽取 |
+| 4.12 | `TrafficChartController` 抽取（月流量数据/图表） | S | 从 `TrafficChartScreen` 抽取 |
+| 4.13 | `SplashController` 抽取（会话恢复/自动连接/初始化） | S | 从 `SplashScreen` 抽取 |
+
+### 5.2 页面改造（View 只通过 Controller 交互）
+
+| # | 任务 | 规模 | 说明 |
+|---|------|------|------|
+| 4.14 | 改造 `HomeScreen`：移除 UseCase 直接引用，只消费 `HomeController` | M | |
+| 4.15 | 改造认证三页面（Login/Register/ForgotPassword）：只消费 `AuthController` | M | |
+| 4.16 | 改造 `NodeListScreen`：只消费 `NodeController` | S | |
+| 4.17 | 改造商店相关页面（Store/OrderConfirm）：只消费 `StoreController` | M | |
+| 4.18 | 改造订单相关页面（OrderList/OrderDetail/PaymentResult）：只消费 `OrderController` | M | |
+| 4.19 | 改造工单相关页面（TicketList/TicketDetail/NewTicket）：只消费 `TicketController` | M | |
+| 4.20 | 改造用户中心相关页面（Profile/Invite/GiftCard）：只消费 `ProfileController` | M | |
+| 4.21 | 改造 `SettingsScreen`/`DiagnosticsScreen`/`NoticeScreen`/`KnowledgeScreen`/`TrafficChartScreen` | M | |
+| 4.22 | 改造 `SplashScreen`：只消费 `SplashController` | S | |
+
+### 5.3 皮肤系统 — SkinPageFactory
+
+| # | 任务 | 规模 | 说明 |
+|---|------|------|------|
+| 4.23 | `SkinContract` 接口定义（contractVersion / skinId / themeTokens / pageFactory） | S | `skins/skin_contract.dart` |
+| 4.24 | `SkinPageFactory` 抽象接口（每个页面方法接收 Controller 返回 Widget?） | M | `skins/skin_page_factory.dart` |
+| 4.25 | `DefaultPageFactory` 实现（全部返回 null，使用默认页面） | S | `skins/default/default_page_factory.dart` |
+| 4.26 | Router 集成：路由构建时先查 `SkinPageFactory`，有覆盖则用皮肤页面，否则用默认 | M | 修改 `app_router.dart` |
+| 4.27 | Controller Provider 注册（`MultiProvider` 注入所有 Controller） | M | 修改 `app.dart` |
+| 4.28 | 皮肤合约版本校验（contractVersion 不兼容时降级 default，日志记录） | S | |
+
+### 5.4 界面设计规范文档
+
+| # | 任务 | 规模 | 说明 |
+|---|------|------|------|
+| 4.29 | 编写 `docs/skin-contract.md`：所有 Controller API 清单（状态属性 + 操作方法） | L | UI 设计者依赖此文档 |
+| 4.30 | 补充 ThemeTokens 使用规范（颜色/字体/间距命名约定） | S | |
+| 4.31 | 编写皮肤开发指南（如何创建新皮肤包、如何覆盖页面、如何测试） | M | |
+
+### 5.5 多语言（i18n/l10n）
+
+| # | 任务 | 规模 | 说明 |
+|---|------|------|------|
+| 4.32 | `app_en.arb` 完整翻译 Key 定义（覆盖全部 UI 文案） | L | 约 150～200 个 Key |
+| 4.33 | `app_zh_CN.arb` 简体中文翻译填写 | L | |
+| 4.34 | `LocaleNotifier`（语言切换 + 持久化 + MaterialApp.locale 联动） | M | |
+| 4.35 | 设置页语言切换 UI（System / 简体中文 / English 三选项） | S | |
+| 4.36 | 全局文案审查：扫描禁止硬编码中文/英文 | M | |
 
 ---
 
@@ -422,7 +457,7 @@ P1 架构骨架（串行，所有阶段前置）
 | WebView 跳转支付在部分 Android 厂商系统受限 | 同时支持系统浏览器跳转作为降级方案 |
 | ARB 文案量大（约 200 Key），翻译工作量超预期 | 可使用机器翻译初稿 + 人工校对；en 基准 Key 先行，zh_CN 随开发逐步补全 |
 | sing-box 配置格式随版本变化 | 锁定版本号（`pubspec.yaml`），升级时运行配置映射回归测试 |
-| 皮肤合约过度开放 | V1 限定 6 个槽位，合约评审后再扩展 |
+| Controller API 变更影响皮肤兼容性 | Controller API 一旦发布即为稳定契约；新增方法通过默认实现兼容；破坏性变更需升级 contractVersion |
 | Stripe 支付公钥获取需额外接口 | 按需接入；优先 Alipay / 微信等国内支付方式 |
 
 ---
@@ -434,11 +469,11 @@ P1 架构骨架（串行，所有阶段前置）
 | P1 架构骨架 | 4～5 周 | 立即开始 | — |
 | P2 商业闭环 | 5～6 周 | P1 完成 | P3、P4 |
 | P3 节点与连接 | 3～4 周 | P1 完成 | P2、P4 |
-| P4 皮肤 + 多语言 | 3～4 周 | P1 完成 | P2、P3 |
+| P4 Controller/View 分离 + 皮肤 | 4～5 周 | P3 完成 | P5 |
 | P5 CI/CD | 2～3 周 | P1 完成 | P2/P3/P4 |
 | P6 第二面板 | 2～3 周 | P3 完成 | — |
 | P7 品牌皮肤 | 2 周 | P4 完成 | — |
-| **V1 主交付（P1～P5）** | **约 17～22 周** | — | — |
+| **V1 主交付（P1～P5）** | **约 18～24 周** | — | — |
 
 > **实际建议**：P1（串行 4 周）→ P2 + P3 + P4 + P5 并行推进（6～8 周）→ 集成测试 + 修复（2 周）→ P6/P7 可选扩展。
 

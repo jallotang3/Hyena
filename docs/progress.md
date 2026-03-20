@@ -2,7 +2,7 @@
 
 > 最后更新：2026-03-20
 
-## 当前状态：P3 节点管理 + 连接完善已完成，P4 待开始
+## 当前状态：P3 已完成，P4 Controller/View 分离 + 皮肤系统 进行中
 
 ---
 
@@ -240,16 +240,60 @@ lib/
 
 ---
 
+## Phase 4 · Controller/View 分离 + 皮肤系统（进行中）
+
+### 架构决策（ADR-008）
+- **选定方案**：Controller/View 分离 + Page Override 皮肤方案
+- **核心思路**：
+  1. 每个页面对应一个 `ScreenController`（extends `ChangeNotifier`），暴露固定的状态属性和操作方法
+  2. View 层只通过 Controller API 交互，禁止直接引用 UseCase / Adapter / Storage
+  3. `SkinPageFactory` 可整页覆盖任意页面，但 Controller API 不变
+  4. 编写 `docs/skin-contract.md` 作为 UI 设计者的唯一依赖文档
+
+### 文档更新（已完成）
+- ✅ `docs/system-design.md` v1.3 — 新增 Controller Layer 分层、Controller 清单、SkinPageFactory 架构
+- ✅ `docs/development-plan.md` v1.1 — 重写 P4 任务列表（13 个 Controller 抽取 + 页面改造 + 皮肤框架）
+- ✅ `docs/skin-contract.md` v1.0 — 界面设计规范（13 个 Controller 的完整 API 清单 + ThemeTokens 规范 + 皮肤开发指南）
+
+### P4-1 ✅ Controller 层创建
+| 编号 | Controller | 状态 |
+|------|-----------|------|
+| 4.1 | `HomeController` | ✅ |
+| 4.2 | `AuthController` | ✅ |
+| 4.3 | `NodeController` | ✅ |
+| 4.4 | `StoreController` | ✅ |
+| 4.5 | `OrderController` | ✅ |
+| 4.6 | `TicketController` | ✅ |
+| 4.7 | `ProfileController` | ✅ |
+| 4.8 | `SettingsController` | ✅ |
+| 4.9 | `DiagController` | ✅ |
+| 4.10 | `NoticeController` | ✅ |
+| 4.11 | `KnowledgeController` | ✅ |
+| 4.12 | `TrafficChartController` | ✅ |
+| 4.13 | `SplashController` | ✅ |
+
+### P4-2 ✅ SkinPageFactory 框架
+- ✅ `SkinContract` 接口（`skins/skin_contract.dart`）
+- ✅ `SkinPageFactory` 抽象接口（`skins/skin_page_factory.dart`）
+- ✅ `DefaultPageFactory` 实现（`skins/default/default_page_factory.dart`）
+- ✅ `SkinManager` 升级为 Contract 模式（加载 SkinContract 而非纯 ThemeTokens）
+
+### P4-3 页面改造（待开始）
+- ⬜ 改造所有页面只通过 Controller 交互
+- ⬜ Router 集成（先查皮肤工厂再用默认页面）
+- ⬜ Controller Provider 注册（MultiProvider）
+
+---
+
 ## 已知问题 / 技术债
 
 | 编号 | 描述 | 优先级 | 计划解决阶段 |
 |------|------|--------|-------------|
 | TD-03 | TrafficPolling 目前仅做 Stub，需接 sing-box Clash API 获取真实流量 | 中 | 接入 libbox 时解决 |
-| TD-10 | 桌面端 tray_manager / window_manager 集成未实现 | 中 | P4 |
-| TD-11 | SkinContract / SkinComponentRegistry / LayoutPresetResolver 架构待实现 | 中 | P4 |
-| TD-12 | 部分 P2 页面直接使用 Theme.of(context) 而非 ThemeTokenProvider | 低 | P4 |
-| TD-13 | EngineConfigBuilder 完整实现（3.12）— 当前已支持 5 种协议 + 3 种路由 + 3 种传输层，基本完整 | 低 | 按需补充 |
-| TD-14 | Phase 3 集成测试（3.16）— 连接状态机全路径测试待补充 | 中 | P4/P5 |
+| TD-10 | 桌面端 tray_manager / window_manager 集成未实现 | 中 | P5 |
+| TD-12 | 部分 P2 页面直接使用 Theme.of(context) 而非 ThemeTokenProvider | 低 | P4 改造时顺带修复 |
+| TD-13 | EngineConfigBuilder 完整实现 — 当前已支持 5 种协议 + 3 种路由 + 3 种传输层，基本完整 | 低 | 按需补充 |
+| TD-14 | Phase 3 集成测试 — 连接状态机全路径测试待补充 | 中 | P5 |
 
 ---
 
