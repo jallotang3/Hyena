@@ -25,18 +25,25 @@ class XboardAdapter implements PanelAdapter {
   @override
   String get panelType => 'xboard';
 
+  /// 按 (baseUrl, authData) 缓存 Dio，避免每次请求新建实例
+  final Map<String, Dio> _dioCache = {};
+
   Dio _dio(PanelSite site, [String? authData]) {
-    final dio = Dio(BaseOptions(
-      baseUrl: '${site.baseUrl}/api/v1',
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        if (authData != null && authData.isNotEmpty) 'Authorization': authData,
-      },
-    ));
-    return dio;
+    final key = '${site.baseUrl}|${authData ?? ''}';
+    return _dioCache.putIfAbsent(key, () {
+      final dio = Dio(BaseOptions(
+        baseUrl: '${site.baseUrl}/api/v1',
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (authData != null && authData.isNotEmpty) 'Authorization': authData,
+        },
+      ));
+      dio.interceptors.add(_XboardLoggingInterceptor());
+      return dio;
+    });
   }
 
   // ── 认证 ─────────────────────────────────────────────────────────────────
@@ -815,5 +822,27 @@ class XboardAdapter implements PanelAdapter {
       return data['message']?.toString() ?? data['msg']?.toString();
     }
     return null;
+  }
+}
+
+class _XboardLoggingInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    AppLogger.d('→ ${options.method} ${options.path}', tag: LogTag.adapter);
+    handler.next(options);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    AppLogger.d('← ${response.statusCode} ${response.requestOptions.path}',
+        tag: LogTag.adapter);
+    handler.next(response);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    AppLogger.e('✗ ${err.requestOptions.path}: ${err.message}',
+        tag: LogTag.adapter);
+    handler.next(err);
   }
 }

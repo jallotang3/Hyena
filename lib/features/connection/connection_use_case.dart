@@ -35,6 +35,7 @@ class ConnectionUseCase {
   Future<void> disconnect() async {
     _retryCount = 0;
     await _engine.disconnect();
+    _currentNode = null;
   }
 
   Future<void> switchMode(RoutingMode mode) async {

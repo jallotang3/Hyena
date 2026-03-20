@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../auth/auth_use_case.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -48,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = ThemeTokenProvider.tokensOf(context);
+    final s = S.of(context)!;
 
     return Scaffold(
       backgroundColor: tokens.colorBackground,
@@ -61,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 32),
                 Text(
-                  'SIGN IN',
+                  s.loginTitle,
                   style: TextStyle(
                     color: tokens.colorOnBackground,
                     fontSize: 28,
@@ -70,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text('Welcome back',
+                Text(s.loginSubtitle,
                     style: TextStyle(color: tokens.colorMuted, fontSize: 14)),
                 const SizedBox(height: 40),
 
@@ -78,11 +80,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: tokens.colorError.withOpacity(0.12),
+                      color: tokens.colorError.withValues(alpha: 0.12),
                       borderRadius:
                           BorderRadius.circular(tokens.radiusSmall),
                       border: Border.all(
-                          color: tokens.colorError.withOpacity(0.4)),
+                          color: tokens.colorError.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       children: [
@@ -106,14 +108,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   autocorrect: false,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'Email address',
+                    hintText: s.loginEmailHint,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon:
                         Icon(Icons.mail_outline, color: tokens.colorMuted),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Email is required';
-                    if (!v.contains('@')) return 'Invalid email';
+                    if (v == null || v.isEmpty) return s.loginEmailHint;
+                    if (!v.contains('@')) return s.errorInvalidCredentials;
                     return null;
                   },
                 ),
@@ -124,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscure,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'Password',
+                    hintText: s.loginPasswordHint,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon:
                         Icon(Icons.lock_outline, color: tokens.colorMuted),
@@ -139,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password is required';
+                    if (v == null || v.isEmpty) return s.loginPasswordHint;
                     return null;
                   },
                   onFieldSubmitted: (_) => _login(),
@@ -150,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => context.push('/forgot-password'),
-                    child: Text('Forgot password?',
+                    child: Text(s.loginForgotPassword,
                         style:
                             TextStyle(color: tokens.colorMuted, fontSize: 13)),
                   ),
@@ -171,8 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: tokens.colorOnPrimary,
                             ),
                           )
-                        : const Text('SIGN IN',
-                            style: TextStyle(
+                        : Text(s.loginButton,
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w700, letterSpacing: 1)),
                   ),
                 ),
@@ -181,12 +183,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text("Don't have an account?",
+                    Text(s.loginRegisterPrompt,
                         style:
                             TextStyle(color: tokens.colorMuted, fontSize: 13)),
                     TextButton(
                       onPressed: () => context.push('/register'),
-                      child: Text('Register',
+                      child: Text(s.loginRegisterLink,
                           style: TextStyle(
                               color: tokens.colorPrimary,
                               fontSize: 13,

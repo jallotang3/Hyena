@@ -1,3 +1,4 @@
+import '../../core/errors/app_error.dart';
 import '../../core/interfaces/panel_adapter.dart';
 import '../../core/models/panel_site.dart';
 import '../../core/models/panel_user.dart';
@@ -127,8 +128,8 @@ class AuthUseCase {
     await _storage.saveEmail(email);
   }
 
-  dynamic _toAppError(Object e) {
-    if (e is Exception) return e;
-    return Exception(e.toString());
+  AppError _toAppError(Object e) {
+    if (e is AppError) return e;
+    return PanelUnavailableException(e.toString());
   }
 }

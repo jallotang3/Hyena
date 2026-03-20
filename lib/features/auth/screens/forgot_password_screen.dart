@@ -36,13 +36,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _error = 'Enter a valid email first');
       return;
     }
-    setState(() => _sendingCode = true);
+    setState(() {
+      _sendingCode = true;
+      _error = null;
+    });
     final auth = context.read<AuthUseCase>();
-    await auth.sendEmailCode(email);
+    final result = await auth.sendEmailCode(email);
     if (!mounted) return;
     setState(() => _sendingCode = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reset code sent!')));
+    result.when(
+      success: (_) => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reset code sent!'))),
+      failure: (e) => setState(() => _error = e.message),
+    );
   }
 
   Future<void> _reset() async {

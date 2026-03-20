@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../connection/connection_use_case.dart';
 import '../../auth/auth_use_case.dart';
+import '../../../core/models/proxy_node.dart';
 import '../../../core/models/traffic_stats.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -39,12 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.watch<AuthUseCase>();
     final user = auth.currentUser;
 
+    final s = S.of(context)!;
     final hour = DateTime.now().hour;
     final greeting = hour < 12
-        ? 'GOOD MORNING'
+        ? s.homeGoodMorning
         : hour < 18
-            ? 'GOOD AFTERNOON'
-            : 'GOOD EVENING';
+            ? s.homeGoodAfternoon
+            : s.homeGoodEvening;
 
     return Scaffold(
       backgroundColor: tokens.colorBackground,
@@ -111,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Row(
                           children: [
                             _StatCard(
-                              label: 'UPLOAD',
+                              label: s.homeUpload,
                               value: _formatBytes(stats.uploadSpeed),
                               total: _formatTotal(stats.uploadBytes),
                               icon: Icons.arrow_upward_rounded,
@@ -120,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(width: 12),
                             _StatCard(
-                              label: 'DOWNLOAD',
+                              label: s.homeDownload,
                               value: _formatBytes(stats.downloadSpeed),
                               total: _formatTotal(stats.downloadBytes),
                               icon: Icons.arrow_downward_rounded,
@@ -182,12 +185,13 @@ class _ConnectButton extends StatelessWidget {
     final isBusy =
         state == EngineState.connecting || state == EngineState.disconnecting;
 
+    final s = S.of(context)!;
     final statusLabel = switch (state) {
-      EngineState.connected => 'CONNECTED',
-      EngineState.connecting => 'CONNECTING',
-      EngineState.disconnecting => 'DISCONNECTING',
+      EngineState.connected => s.homeConnected,
+      EngineState.connecting => s.homeConnecting,
+      EngineState.disconnecting => s.homeDisconnecting,
       EngineState.error => 'ERROR',
-      _ => 'DISCONNECTED',
+      _ => s.homeDisconnected,
     };
 
     final ringColor = isConnected
@@ -250,7 +254,7 @@ class _ConnectButton extends StatelessWidget {
                     letterSpacing: 1.5)),
             if (!isBusy) ...[
               const SizedBox(height: 4),
-              Text(isConnected ? 'TAP TO DISCONNECT' : 'TAP TO CONNECT',
+              Text(isConnected ? s.homeDisconnectButton : s.homeConnectButton,
                   style: TextStyle(
                       color: tokens.colorMuted,
                       fontSize: 9,
@@ -262,9 +266,16 @@ class _ConnectButton extends StatelessWidget {
     );
   }
 
-  dynamic _stubNode() {
-    // P2 会从 NodeUseCase 提供真实节点，此处仅供 UI 开发调试
-    return Object();
+  ProxyNode _stubNode() {
+    return const ProxyNode(
+      id: 'stub-01',
+      name: 'Tokyo-01 [Stub]',
+      group: 'Debug',
+      protocol: 'vless',
+      address: '127.0.0.1',
+      port: 443,
+      extra: {'uuid': '00000000-0000-0000-0000-000000000000'},
+    );
   }
 }
 
@@ -351,7 +362,7 @@ class _NodeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('CURRENT NODE',
+                Text(S.of(context)!.homeCurrentNode,
                     style: TextStyle(
                         color: tokens.colorMuted,
                         fontSize: 10,
@@ -383,7 +394,7 @@ class _NodeCard extends StatelessWidget {
                 foregroundColor: tokens.colorPrimary,
                 textStyle: const TextStyle(
                     fontSize: 12, fontWeight: FontWeight.w600)),
-            child: const Text('Change'),
+            child: Text(S.of(context)!.homeChangeNode),
           ),
         ],
       ),
@@ -399,7 +410,8 @@ class _RoutingModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final modes = [RoutingMode.rule, RoutingMode.global, RoutingMode.direct];
-    final labels = ['Rules', 'Global', 'Direct'];
+    final s = S.of(context)!;
+    final labels = [s.homeRoutingRule, s.homeRoutingGlobal, s.homeRoutingDirect];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -410,7 +422,7 @@ class _RoutingModeCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ROUTING MODE',
+          Text(S.of(context)!.homeRoutingMode,
               style: TextStyle(
                   color: tokens.colorMuted, fontSize: 10, letterSpacing: 1)),
           const SizedBox(height: 12),
@@ -465,11 +477,12 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context)!;
     final items = [
-      (Icons.home_outlined, Icons.home, 'HOME'),
-      (Icons.language_outlined, Icons.language, 'NODES'),
-      (Icons.settings_outlined, Icons.settings, 'SETTINGS'),
-      (Icons.person_outline, Icons.person, 'MY'),
+      (Icons.home_outlined, Icons.home, s.navHome),
+      (Icons.language_outlined, Icons.language, s.navNodes),
+      (Icons.settings_outlined, Icons.settings, s.navSettings),
+      (Icons.person_outline, Icons.person, s.navMy),
     ];
 
     return Container(
