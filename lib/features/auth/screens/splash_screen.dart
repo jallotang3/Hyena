@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../auth/auth_use_case.dart';
+import '../../connection/connection_use_case.dart';
+import '../../node/node_use_case.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -36,7 +38,26 @@ class _SplashScreenState extends State<SplashScreen>
     final restored = await auth.restoreSession();
 
     if (!mounted) return;
-    context.go(restored ? '/home' : '/login');
+    if (restored) {
+      _tryAutoConnect();
+      context.go('/home');
+    } else {
+      context.go('/login');
+    }
+  }
+
+  Future<void> _tryAutoConnect() async {
+    final connUseCase = context.read<ConnectionUseCase>();
+    final nodeUseCase = context.read<NodeUseCase>();
+    final lastId = nodeUseCase.getLastNodeId();
+    if (lastId == null) return;
+
+    final result = await nodeUseCase.fetchNodes();
+    if (!result.isSuccess) return;
+    final node = result.value.where((n) => n.id == lastId).firstOrNull;
+    if (node != null) {
+      await connUseCase.tryAutoConnect(node);
+    }
   }
 
   @override

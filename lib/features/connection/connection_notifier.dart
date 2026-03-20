@@ -23,6 +23,8 @@ class ConnectionNotifier extends ChangeNotifier {
   EngineState get state => useCase.state;
   ProxyNode? get currentNode => useCase.currentNode;
   TrafficStats get traffic => _lastTraffic;
+  Duration get connectionDuration => useCase.connectionDuration;
+  DateTime? get connectedSince => useCase.connectedSince;
 
   Future<void> connectToNode(ProxyNode node) async {
     await useCase.connect(node);

@@ -9,6 +9,7 @@ import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/connection/screens/home_screen.dart';
 import '../features/diagnostics/screens/diagnostics_screen.dart';
 import '../features/invite/screens/invite_screen.dart';
+import '../features/stat/screens/traffic_chart_screen.dart';
 import '../features/node/screens/node_list_screen.dart';
 import '../features/order/screens/order_center_screen.dart';
 import '../features/order/screens/order_detail_screen.dart';
@@ -63,6 +64,9 @@ class AppRouter {
         GoRoute(
             path: '/diagnostics',
             builder: (_, __) => const DiagnosticsScreen()),
+        GoRoute(
+            path: '/traffic-chart',
+            builder: (_, __) => const TrafficChartScreen()),
       ],
     );
   }

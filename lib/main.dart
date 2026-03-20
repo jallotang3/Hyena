@@ -34,6 +34,7 @@ Future<void> main() async {
 
   const isDev = !bool.fromEnvironment('dart.vm.product');
   AppLogger.setVerbose(isDev);
+  await AppLogger.enableFileLogging();
   AppLogger.i('Hyena ${AppConfig.appVersion} starting…', tag: LogTag.general);
 
   await AppPreferences.init();

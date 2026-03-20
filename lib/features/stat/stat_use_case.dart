@@ -2,6 +2,7 @@ import '../../core/errors/app_error.dart';
 import '../../core/interfaces/panel_adapter.dart';
 import '../../core/models/panel_site.dart';
 import '../../core/models/panel_user.dart';
+import '../../core/models/commercial/notice.dart';
 import '../../core/result.dart';
 import '../../infrastructure/storage/secure_storage.dart';
 
@@ -19,6 +20,17 @@ class StatUseCase {
       if (auth == null) return Failure(const AuthException('未登录'));
       final stat = await _adapter.fetchUserStat(_site, auth);
       return Success(stat);
+    } catch (e) {
+      return Failure(_toAppError(e));
+    }
+  }
+
+  Future<Result<List<TrafficRecord>>> fetchTrafficLog() async {
+    try {
+      final auth = await SecureStorage.instance.readAuthContext();
+      if (auth == null) return Failure(const AuthException('未登录'));
+      final logs = await _adapter.fetchTrafficLog(_site, auth);
+      return Success(logs);
     } catch (e) {
       return Failure(_toAppError(e));
     }

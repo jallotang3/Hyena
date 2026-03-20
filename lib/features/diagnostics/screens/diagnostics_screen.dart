@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../infrastructure/logging/app_logger.dart';
+import '../../../infrastructure/logging/log_file_manager.dart';
+import '../../connection/connection_notifier.dart';
 
 class DiagnosticsScreen extends StatefulWidget {
   const DiagnosticsScreen({super.key});
@@ -13,36 +18,67 @@ class DiagnosticsScreen extends StatefulWidget {
 class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   List<String> _logs = [];
   bool _running = false;
+  Timer? _refreshTimer;
+  final _scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadLogs();
-  }
-
-  void _loadLogs() {
-    setState(() {
-      _logs = AppLogger.recentLogs;
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) _loadLogs();
     });
   }
 
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _loadLogs() {
+    final latest = AppLogger.recentLogs;
+    if (latest.length != _logs.length) {
+      setState(() => _logs = latest);
+    }
+  }
+
   Future<void> _runDiagnostics() async {
+    final conn = context.read<ConnectionNotifier>();
     setState(() => _running = true);
-    final results = <String>[];
-    results.add('[DNS] Checking...');
+
+    AppLogger.i('[Diag] DNS 检测开始...', tag: LogTag.network);
     await Future.delayed(const Duration(milliseconds: 500));
-    results.add('[DNS] OK');
-    results.add('[Network] Checking connectivity...');
+    AppLogger.i('[Diag] DNS OK', tag: LogTag.network);
+
+    AppLogger.i('[Diag] 网络连通性检测...', tag: LogTag.network);
     await Future.delayed(const Duration(milliseconds: 500));
-    results.add('[Network] OK');
-    results.add('[Engine] Checking VPN core status...');
-    await Future.delayed(const Duration(milliseconds: 300));
-    results.add('[Engine] OK');
-    if (mounted) {
-      setState(() {
-        _logs = [...results, '', '--- Recent Logs ---', ..._logs];
-        _running = false;
-      });
+    AppLogger.i('[Diag] 网络 OK', tag: LogTag.network);
+
+    AppLogger.i('[Diag] 内核状态: ${conn.state.name}', tag: LogTag.vpn);
+
+    if (conn.connectedSince != null) {
+      final dur = conn.connectionDuration;
+      AppLogger.i(
+        '[Diag] 连接时长: ${dur.inMinutes}m ${dur.inSeconds % 60}s',
+        tag: LogTag.vpn,
+      );
+    }
+
+    _loadLogs();
+    if (mounted) setState(() => _running = false);
+  }
+
+  Future<void> _exportLogs() async {
+    try {
+      await LogFileManager.instance.shareExport();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
     }
   }
 
@@ -58,11 +94,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           IconButton(
             icon: const Icon(Icons.file_download_outlined),
             tooltip: s.diagnosticsExport,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(s.diagnosticsExport)),
-              );
-            },
+            onPressed: _exportLogs,
           ),
         ],
       ),
@@ -94,14 +126,19 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       child: Text(s.diagnosticsEmpty,
                           style: theme.textTheme.bodySmall))
                   : ListView.builder(
+                      controller: _scrollCtrl,
+                      reverse: true,
                       itemCount: _logs.length,
-                      itemBuilder: (_, i) => Text(
-                        _logs[i],
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
-                          height: 1.6,
-                        ),
-                      ),
+                      itemBuilder: (_, i) {
+                        final idx = _logs.length - 1 - i;
+                        return Text(
+                          _logs[idx],
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontFamily: 'monospace',
+                            height: 1.6,
+                          ),
+                        );
+                      },
                     ),
             ),
           ),

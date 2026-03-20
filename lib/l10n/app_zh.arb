@@ -200,6 +200,12 @@
 
   "orderDetail": "订单详情",
 
+  "nodesSortLabel": "排序",
+  "nodesSortName": "按名称",
+  "nodesSortLatency": "按延迟",
+  "nodesSortGroup": "按分组",
+  "noTrafficData": "暂无流量数据",
+
   "navHome": "首页",
   "navNodes": "节点",
   "navSettings": "设置",
@@ -231,5 +237,9 @@
 
   "langSystem": "跟随系统",
   "langEn": "English",
-  "langZhCN": "简体中文"
+  "langZhCN": "简体中文",
+
+  "settingsConnection": "连接",
+  "settingsAutoConnectDesc": "启动时自动连接上次使用的节点",
+  "settingsTools": "工具"
 }

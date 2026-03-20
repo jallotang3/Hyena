@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../infrastructure/storage/preferences.dart';
 import '../../../l10n/app_localizations.dart';
 import '../locale_notifier.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  late bool _autoConnect;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoConnect = AppPreferences.instance.autoConnect;
+  }
 
   static const _locales = [
     _LocaleOption(code: '', label: '跟随系统'),
@@ -28,6 +43,17 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: Text(s.settings)),
       body: ListView(
         children: [
+          _SectionHeader(label: s.settingsConnection),
+          SwitchListTile(
+            title: Text(s.settingsAutoConnect),
+            subtitle: Text(s.settingsAutoConnectDesc),
+            value: _autoConnect,
+            onChanged: (v) {
+              setState(() => _autoConnect = v);
+              AppPreferences.instance.setAutoConnect(v);
+            },
+          ),
+          const Divider(),
           _SectionHeader(label: s.language),
           ..._locales.map((loc) {
             final selected = currentCode == loc.code;
@@ -43,6 +69,20 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _setLocale(context, localeNotifier, loc),
             );
           }),
+          const Divider(),
+          _SectionHeader(label: s.settingsTools),
+          ListTile(
+            leading: const Icon(Icons.bar_chart),
+            title: Text(s.trafficUsage),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/traffic-chart'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: Text(s.diagnosticsTitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/diagnostics'),
+          ),
           const Divider(),
           _SectionHeader(label: s.about),
           ListTile(

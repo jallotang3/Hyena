@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'log_file_manager.dart';
 
 enum LogTag { auth, node, vpn, adapter, skin, storage, network, ui, general }
 
@@ -9,10 +10,16 @@ class AppLogger {
   static bool _verbose = false;
   static const int _maxLogs = 200;
   static final List<String> _recentLogs = [];
+  static bool _fileLoggingEnabled = false;
 
   static List<String> get recentLogs => List.unmodifiable(_recentLogs);
 
   static void setVerbose(bool value) => _verbose = value;
+
+  static Future<void> enableFileLogging() async {
+    await LogFileManager.instance.initialize();
+    _fileLoggingEnabled = true;
+  }
 
   static void d(String message, {LogTag tag = LogTag.general}) =>
       _log(LogLevel.debug, message, tag);
@@ -44,6 +51,10 @@ class AppLogger {
 
     _recentLogs.add(formatted);
     if (_recentLogs.length > _maxLogs) _recentLogs.removeAt(0);
+    if (_fileLoggingEnabled) {
+      final ts = DateTime.now().toIso8601String().substring(11, 23);
+      LogFileManager.instance.write('$ts $formatted');
+    }
     developer.log(formatted, name: 'hyena', level: level.index * 300);
   }
 

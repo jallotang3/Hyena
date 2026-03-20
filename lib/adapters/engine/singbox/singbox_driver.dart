@@ -18,6 +18,8 @@ class SingboxDriver implements CoreEngine {
   String get engineType => 'singbox';
 
   EngineState _state = EngineState.idle;
+  ProxyNode? _currentNode;
+  RoutingMode _currentMode = RoutingMode.rule;
   final _stateController = StreamController<EngineState>.broadcast();
   final _trafficController = StreamController<TrafficStats>.broadcast();
   final _logController = StreamController<String>.broadcast();
@@ -72,6 +74,8 @@ class SingboxDriver implements CoreEngine {
     }
 
     _setState(EngineState.connecting);
+    _currentNode = node;
+    _currentMode = mode;
     AppLogger.i('开始连接节点: ${node.name}', tag: LogTag.vpn);
 
     try {
@@ -127,8 +131,35 @@ class SingboxDriver implements CoreEngine {
 
   @override
   Future<void> switchRoutingMode(RoutingMode mode) async {
+    _currentMode = mode;
     AppLogger.i('切换路由模式: $mode', tag: LogTag.vpn);
-    // TODO(P3): 实现路由模式热切换（通过 Clash API 或重载配置）
+
+    if (_state != EngineState.connected || _currentNode == null) return;
+
+    _setState(EngineState.connecting);
+    try {
+      if (LibboxFfi.isLoaded && LibboxFfi.isRunning) {
+        LibboxFfi.stopVpn();
+      }
+      final configJson =
+          SingboxConfigBuilder.build(node: _currentNode!, mode: _currentMode);
+      if (!LibboxFfi.isLoaded) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        _setState(EngineState.connected);
+        return;
+      }
+      final (success, error) = LibboxFfi.startVpn(configJson);
+      if (!success) {
+        _setState(EngineState.error);
+        AppLogger.e('路由模式切换失败: $error', tag: LogTag.vpn);
+        return;
+      }
+      _setState(EngineState.connected);
+      AppLogger.i('路由模式切换成功: $mode', tag: LogTag.vpn);
+    } catch (e) {
+      _setState(EngineState.error);
+      AppLogger.e('路由模式切换异常: $e', tag: LogTag.vpn);
+    }
   }
 
   @override

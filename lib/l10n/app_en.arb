@@ -219,6 +219,12 @@
 
   "orderDetail": "Order Detail",
 
+  "nodesSortLabel": "Sort",
+  "nodesSortName": "By Name",
+  "nodesSortLatency": "By Latency",
+  "nodesSortGroup": "By Group",
+  "noTrafficData": "No traffic data available",
+
   "navHome": "HOME",
   "navNodes": "NODES",
   "navSettings": "SETTINGS",
@@ -250,5 +256,9 @@
 
   "langSystem": "Follow System",
   "langEn": "English",
-  "langZhCN": "简体中文"
+  "langZhCN": "简体中文",
+
+  "settingsConnection": "Connection",
+  "settingsAutoConnectDesc": "Auto connect last used node on startup",
+  "settingsTools": "Tools"
 }

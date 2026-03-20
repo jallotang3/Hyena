@@ -49,6 +49,35 @@ class _NodeListScreenState extends State<NodeListScreen>
           ],
         ),
         actions: [
+          Consumer<NodeNotifier>(
+            builder: (_, notifier, __) => IconButton(
+              icon: notifier.isTesting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.speed),
+              tooltip: s.nodesTestAll,
+              onPressed: notifier.isTesting
+                  ? null
+                  : () => notifier.testAllNodes(),
+            ),
+          ),
+          PopupMenuButton<NodeSortMode>(
+            icon: const Icon(Icons.sort),
+            tooltip: s.nodesSortLabel,
+            onSelected: (mode) =>
+                context.read<NodeNotifier>().setSortMode(mode),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                  value: NodeSortMode.name, child: Text(s.nodesSortName)),
+              PopupMenuItem(
+                  value: NodeSortMode.latency,
+                  child: Text(s.nodesSortLatency)),
+              PopupMenuItem(
+                  value: NodeSortMode.group, child: Text(s.nodesSortGroup)),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () =>

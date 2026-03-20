@@ -137,6 +137,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Connection duration
+                    if (conn.connectedSince != null)
+                      _ConnectionDurationChip(conn: conn, tokens: tokens),
+                    if (conn.connectedSince != null) const SizedBox(height: 12),
+
                     // Current node card
                     _NodeCard(conn: conn, tokens: tokens),
                     const SizedBox(height: 16),
@@ -521,6 +526,67 @@ class _BottomNav extends StatelessWidget {
           );
         }),
       ),
+    );
+  }
+}
+
+class _ConnectionDurationChip extends StatefulWidget {
+  const _ConnectionDurationChip({required this.conn, required this.tokens});
+  final ConnectionNotifier conn;
+  final ThemeTokens tokens;
+
+  @override
+  State<_ConnectionDurationChip> createState() =>
+      _ConnectionDurationChipState();
+}
+
+class _ConnectionDurationChipState extends State<_ConnectionDurationChip> {
+  late final Stream<int> _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Stream.periodic(const Duration(seconds: 1), (i) => i);
+  }
+
+  String _fmt(Duration d) {
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: _ticker,
+      builder: (_, __) {
+        final dur = widget.conn.connectionDuration;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: widget.tokens.colorSurface,
+            borderRadius: BorderRadius.circular(widget.tokens.radiusSmall),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.timer_outlined,
+                  size: 14, color: widget.tokens.colorMuted),
+              const SizedBox(width: 6),
+              Text(
+                _fmt(dur),
+                style: TextStyle(
+                  color: widget.tokens.colorOnBackground,
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
