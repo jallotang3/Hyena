@@ -1,0 +1,167 @@
+{
+  "@@locale": "en",
+
+  "appName": "HyenaVPN",
+  "@appName": { "description": "Application name" },
+
+  "splashTagline": "Fast. Private. Yours.",
+  "splashGetStarted": "GET STARTED",
+
+  "loginTitle": "SIGN IN",
+  "loginSubtitle": "Welcome back",
+  "loginEmailHint": "Email address",
+  "loginPasswordHint": "Password",
+  "loginButton": "SIGN IN",
+  "loginForgotPassword": "Forgot password?",
+  "loginRegisterPrompt": "Don't have an account?",
+  "loginRegisterLink": "Register",
+  "loginMailLink": "Sign in with email link",
+
+  "registerTitle": "CREATE ACCOUNT",
+  "registerSubtitle": "Join today",
+  "registerEmailHint": "Email address",
+  "registerEmailCodeHint": "Email verification code",
+  "registerPasswordHint": "Password",
+  "registerInviteCodeHint": "Invite code (optional)",
+  "registerSendCode": "SEND CODE",
+  "registerButton": "REGISTER",
+  "registerHaveAccount": "Already have an account?",
+  "registerLoginLink": "Sign in",
+
+  "forgotPasswordTitle": "RESET PASSWORD",
+  "forgotPasswordSubtitle": "Enter your email to receive a reset code",
+  "forgotPasswordButton": "RESET PASSWORD",
+
+  "homeGoodMorning": "GOOD MORNING",
+  "homeGoodAfternoon": "GOOD AFTERNOON",
+  "homeGoodEvening": "GOOD EVENING",
+  "homeConnected": "CONNECTED",
+  "homeDisconnected": "DISCONNECTED",
+  "homeConnecting": "CONNECTING",
+  "homeDisconnecting": "DISCONNECTING",
+  "homeConnectButton": "CONNECT",
+  "homeDisconnectButton": "DISCONNECT",
+  "homeCurrentNode": "CURRENT NODE",
+  "homeChangeNode": "Change",
+  "homeUpload": "UPLOAD",
+  "homeDownload": "DOWNLOAD",
+  "homeRoutingMode": "ROUTING MODE",
+  "homeRoutingGlobal": "Global",
+  "homeRoutingRule": "Rules",
+  "homeRoutingDirect": "Direct",
+  "homeTrafficUsed": "{used} / {total}",
+  "@homeTrafficUsed": {
+    "placeholders": {
+      "used": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "nodesTitle": "NODES",
+  "nodesCount": "{count} nodes",
+  "@nodesCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "nodesTestAll": "Test All",
+  "nodesSearchHint": "Search nodes...",
+  "nodesFilterAll": "All",
+  "nodesFilterFavorites": "Favorites",
+
+  "storeTitle": "STORE",
+  "storeSubtitle": "Choose your plan",
+  "storePlansLabel": "PLANS",
+  "storeTabSubscription": "Subscription",
+  "storeTabDataPack": "Data Pack",
+  "storePaymentMethodLabel": "PAYMENT METHOD",
+  "storePayNow": "PAY NOW · {currency}{amount}",
+  "@storePayNow": {
+    "placeholders": {
+      "currency": { "type": "String" },
+      "amount": { "type": "String" }
+    }
+  },
+
+  "orderCenterTitle": "ORDER CENTER",
+  "orderFilterAll": "All",
+  "orderFilterPending": "Pending",
+  "orderFilterDone": "Done",
+  "orderStatusPending": "Pending",
+  "orderStatusProcessing": "Processing",
+  "orderStatusCancelled": "Cancelled",
+  "orderStatusCompleted": "Completed",
+  "orderPayNow": "PAY NOW",
+  "orderCancel": "Cancel Order",
+
+  "ticketListTitle": "TICKETS",
+  "ticketNewButton": "New Ticket",
+  "ticketStatusOpen": "Open",
+  "ticketStatusClosed": "Closed",
+  "ticketLevelNormal": "Normal",
+  "ticketLevelHigh": "High",
+  "ticketLevelUrgent": "Urgent",
+  "ticketReplyHint": "Type a reply...",
+  "ticketSendButton": "SEND",
+  "ticketCloseButton": "Close Ticket",
+  "ticketNewTitle": "NEW TICKET",
+  "ticketSubjectHint": "Subject",
+  "ticketDescriptionHint": "Describe your issue...",
+  "ticketSubmitButton": "SUBMIT",
+
+  "profileTitle": "PROFILE",
+  "profileSettings": "Settings",
+  "profileSubscription": "SUBSCRIPTION",
+  "profileTrafficUsed": "Traffic Used",
+  "profileAccount": "ACCOUNT",
+  "profileStore": "Store",
+  "profileOrders": "Orders",
+  "profileTickets": "Tickets",
+  "profileInvite": "Invite & Earn",
+  "profileSignOut": "Sign Out",
+
+  "inviteTitle": "INVITE & EARN",
+  "inviteReferralLink": "YOUR REFERRAL LINK",
+  "inviteCopy": "COPY",
+  "inviteWithdraw": "Withdraw Commission",
+  "inviteRecentInvites": "RECENT INVITES",
+
+  "settingsTitle": "SETTINGS",
+  "settingsEngine": "VPN ENGINE",
+  "settingsSkin": "APPEARANCE",
+  "settingsAutoConnect": "Auto Connect",
+  "settingsLanguage": "Language",
+  "settingsAbout": "About",
+
+  "diagnosticsTitle": "DIAGNOSTICS",
+  "diagnosticsExport": "Export Logs",
+
+  "navHome": "HOME",
+  "navNodes": "NODES",
+  "navSettings": "SETTINGS",
+  "navMy": "MY",
+
+  "errorUnknown": "An unknown error occurred",
+  "errorNetwork": "Network connection failed",
+  "errorTimeout": "Request timed out",
+  "errorAuthExpired": "Session expired, please sign in again",
+  "errorInvalidCredentials": "Invalid email or password",
+  "errorNodeParseFailed": "Failed to parse node configuration",
+  "errorEngineFailed": "VPN engine failed to start",
+
+  "emptyOrders": "No orders yet",
+  "emptyTickets": "No tickets yet",
+  "emptyNodes": "No nodes available",
+
+  "commonConfirm": "Confirm",
+  "commonCancel": "Cancel",
+  "commonClose": "Close",
+  "commonCopied": "Copied!",
+  "commonRetry": "Retry",
+  "commonLoading": "Loading...",
+  "commonSave": "Save",
+
+  "langSystem": "Follow System",
+  "langEn": "English",
+  "langZhCN": "简体中文"
+}
