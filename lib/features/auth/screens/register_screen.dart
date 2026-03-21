@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../auth/auth_use_case.dart';
-import '../../../core/interfaces/panel_adapter.dart';
-import '../../../core/result.dart';
+import '../../../controllers/auth_controller.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -40,14 +38,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
     setState(() => _sendingCode = true);
-    final auth = context.read<AuthUseCase>();
-    final result = await auth.sendEmailCode(email);
+    final ctrl = context.read<AuthController>();
+    final ok = await ctrl.sendEmailCode(email);
     if (!mounted) return;
     setState(() {
       _sendingCode = false;
-      _error = result.isFailure ? (result as Failure).error.message : null;
+      _error = ctrl.error;
     });
-    if (result.isSuccess) {
+    if (ok) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Verification code sent!')));
     }
@@ -59,20 +57,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _loading = true;
       _error = null;
     });
-    final auth = context.read<AuthUseCase>();
-    final result = await auth.register(RegisterCredentials(
-      email: _emailCtrl.text.trim(),
-      password: _pwdCtrl.text,
-      emailCode: _codeCtrl.text.trim(),
-      inviteCode:
-          _inviteCtrl.text.trim().isEmpty ? null : _inviteCtrl.text.trim(),
-    ));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    result.when(
-      success: (_) => context.go('/home'),
-      failure: (e) => setState(() => _error = e.message),
+    final ctrl = context.read<AuthController>();
+    final ok = await ctrl.register(
+      _emailCtrl.text.trim(),
+      _pwdCtrl.text,
+      _codeCtrl.text.trim(),
+      _inviteCtrl.text.trim().isEmpty ? null : _inviteCtrl.text.trim(),
     );
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _error = ctrl.error;
+    });
+    if (ok) context.go('/home');
   }
 
   @override

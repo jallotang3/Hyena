@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/ticket_controller.dart';
 import '../../../core/models/commercial/ticket.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../ticket_use_case.dart';
 import 'ticket_detail_screen.dart';
 
 class TicketListScreen extends StatefulWidget {
@@ -15,34 +14,12 @@ class TicketListScreen extends StatefulWidget {
 }
 
 class _TicketListScreenState extends State<TicketListScreen> {
-  List<Ticket> _tickets = [];
-  bool _loading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TicketController>().fetchTickets();
     });
-    final result = await context.read<TicketUseCase>().fetchTickets();
-    if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _tickets = result.value;
-        _loading = false;
-      });
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
   }
 
   @override
@@ -55,24 +32,33 @@ class _TicketListScreenState extends State<TicketListScreen> {
         icon: const Icon(Icons.add),
         label: Text(s.newTicket),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _ErrorRetry(message: _error!, onRetry: _load)
-              : _tickets.isEmpty
-                  ? Center(child: Text(s.noTickets))
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _tickets.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) => _TicketTile(
-                          ticket: _tickets[i],
-                          onTap: () => _openDetail(context, _tickets[i]),
-                        ),
-                      ),
-                    ),
+      body: Consumer<TicketController>(
+        builder: (_, ctrl, __) {
+          if (ctrl.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (ctrl.error != null) {
+            return _ErrorRetry(
+                message: ctrl.error!,
+                onRetry: () => ctrl.fetchTickets());
+          }
+          if (ctrl.tickets.isEmpty) {
+            return Center(child: Text(s.noTickets));
+          }
+          return RefreshIndicator(
+            onRefresh: () => ctrl.fetchTickets(),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: ctrl.tickets.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, i) => _TicketTile(
+                ticket: ctrl.tickets[i],
+                onTap: () => _openDetail(context, ctrl.tickets[i]),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -80,7 +66,7 @@ class _TicketListScreenState extends State<TicketListScreen> {
     await Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => TicketDetailScreen(ticketId: ticket.id),
     ));
-    _load();
+    if (context.mounted) context.read<TicketController>().fetchTickets();
   }
 
   Future<void> _showCreateDialog(BuildContext context, S s) async {
@@ -141,22 +127,16 @@ class _TicketListScreenState extends State<TicketListScreen> {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    final uc = context.read<TicketUseCase>();
-    final result = await uc.createTicket(
-      request: TicketRequest(
-        subject: subjectCtrl.text.trim(),
-        level: level,
-        message: messageCtrl.text.trim(),
-      ),
+    final ctrl = context.read<TicketController>();
+    final ok = await ctrl.createTicket(
+      subjectCtrl.text.trim(),
+      level.code,
+      messageCtrl.text.trim(),
     );
-    if (context.mounted) {
-      if (result.isSuccess) {
-        _load();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text((result as Failure).error.message)),
-        );
-      }
+    if (context.mounted && !ok && ctrl.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ctrl.error!)),
+      );
     }
   }
 

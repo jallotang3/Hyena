@@ -2,7 +2,7 @@
 
 > 最后更新：2026-03-20
 
-## 当前状态：P3 已完成，P4 Controller/View 分离 + 皮肤系统 进行中
+## 当前状态：P4 Controller/View 分离 + 皮肤系统 已完成
 
 ---
 
@@ -240,7 +240,7 @@ lib/
 
 ---
 
-## Phase 4 · Controller/View 分离 + 皮肤系统（进行中）
+## Phase 4 · Controller/View 分离 + 皮肤系统（已完成）
 
 ### 架构决策（ADR-008）
 - **选定方案**：Controller/View 分离 + Page Override 皮肤方案
@@ -278,10 +278,23 @@ lib/
 - ✅ `DefaultPageFactory` 实现（`skins/default/default_page_factory.dart`）
 - ✅ `SkinManager` 升级为 Contract 模式（加载 SkinContract 而非纯 ThemeTokens）
 
-### P4-3 页面改造（待开始）
-- ⬜ 改造所有页面只通过 Controller 交互
-- ⬜ Router 集成（先查皮肤工厂再用默认页面）
-- ⬜ Controller Provider 注册（MultiProvider）
+### P4-3 ✅ 页面改造
+- ✅ 所有页面改造为只通过 Controller 交互
+  - `HomeScreen`：使用 `HomeController`（stateStream / trafficStream / connect / disconnect / switchRoutingMode / toggleFavorite）
+  - `LoginScreen` / `RegisterScreen` / `ForgotPasswordScreen`：使用 `AuthController`（login / register / sendEmailCode / resetPassword）
+  - `SplashScreen`：使用 `SplashController`（initialize / shouldNavigateTo）
+  - `NodeListScreen`：使用 `NodeController`（load / testAllNodes / setSortMode / setFilter / selectAndConnect / toggleFavorite）
+  - `StoreScreen`：使用 `StoreController`（fetchPlans / createOrder / checkout / fetchPaymentMethods）
+  - `OrderCenterScreen` / `OrderDetailScreen`：使用 `OrderController`（fetchOrders / fetchOrderDetail / cancelOrder / checkOrderStatus）
+  - `PaymentResultScreen`：使用 `OrderController`（checkOrderStatus）
+  - `TicketListScreen` / `TicketDetailScreen`：使用 `TicketController`（fetchTickets / createTicket / replyTicket / closeTicket）
+  - `ProfileScreen`：使用 `ProfileController`（fetchUser / changePassword / logout）
+  - `InviteScreen`：使用 `ProfileController`（fetchInviteSummary / generateInviteCode）
+  - `SettingsScreen`：使用 `SettingsController`（autoConnect / setLocale / setAutoConnect）— 改为 StatelessWidget
+  - `DiagnosticsScreen`：使用 `DiagController`（refreshLogs / runDiagnostics / exportLogs）
+  - `TrafficChartScreen`：使用 `TrafficChartController`（fetchTrafficLog / records）
+- ✅ Router 集成 SkinPageFactory（先查皮肤工厂再用默认页面）
+- ✅ Controller Provider 注册（`main.dart` MultiProvider 注入 13 个 ScreenController）
 
 ---
 

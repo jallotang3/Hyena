@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../connection/connection_notifier.dart';
-import '../../auth/auth_use_case.dart';
-import '../../node/node_notifier.dart';
+import '../../../controllers/home_controller.dart';
 import '../../../core/models/traffic_stats.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
@@ -19,7 +17,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _bottomIndex = 0;
 
   String _formatBytes(double bytes) {
-    if (bytes < 1024) { return '${bytes.toStringAsFixed(0)} B/s'; }
+    if (bytes < 1024) {
+      return '${bytes.toStringAsFixed(0)} B/s';
+    }
     if (bytes < 1024 * 1024) {
       return '${(bytes / 1024).toStringAsFixed(1)} KB/s';
     }
@@ -38,9 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = ThemeTokenProvider.tokensOf(context);
-    final conn = context.watch<ConnectionNotifier>();
-    final auth = context.watch<AuthUseCase>();
-    final user = auth.currentUser;
+    final ctrl = context.watch<HomeController>();
 
     final s = S.of(context)!;
     final hour = DateTime.now().hour;
@@ -69,7 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontSize: 11,
                               letterSpacing: 1.5)),
                       Text(
-                        user?.email.split('@').first.toUpperCase() ?? 'USER',
+                        ctrl.userEmail?.split('@').first.toUpperCase() ??
+                            'USER',
                         style: TextStyle(
                             color: tokens.colorOnBackground,
                             fontSize: 18,
@@ -96,19 +95,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Connection button
                     StreamBuilder<EngineState>(
-                      stream: conn.useCase.stateStream,
-                      initialData: conn.state,
+                      stream: ctrl.stateStream,
+                      initialData: ctrl.connectionState,
                       builder: (context, snap) {
                         final state = snap.data ?? EngineState.idle;
                         return _ConnectButton(
-                            state: state, conn: conn, tokens: tokens);
+                            state: state, ctrl: ctrl, tokens: tokens);
                       },
                     ),
                     const SizedBox(height: 28),
 
                     // Traffic stats
                     StreamBuilder<TrafficStats>(
-                      stream: conn.useCase.trafficStream,
+                      stream: ctrl.trafficStream,
                       initialData: TrafficStats.zero,
                       builder: (context, snap) {
                         final stats = snap.data ?? TrafficStats.zero;
@@ -138,16 +137,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
 
                     // Connection duration
-                    if (conn.connectedSince != null)
-                      _ConnectionDurationChip(conn: conn, tokens: tokens),
-                    if (conn.connectedSince != null) const SizedBox(height: 12),
+                    if (ctrl.connectedSince != null)
+                      _ConnectionDurationChip(ctrl: ctrl, tokens: tokens),
+                    if (ctrl.connectedSince != null) const SizedBox(height: 12),
 
                     // Current node card
-                    _NodeCard(conn: conn, tokens: tokens),
+                    _NodeCard(ctrl: ctrl, tokens: tokens),
                     const SizedBox(height: 16),
 
                     // Routing mode
-                    _RoutingModeCard(conn: conn, tokens: tokens),
+                    _RoutingModeCard(ctrl: ctrl, tokens: tokens),
                   ],
                 ),
               ),
@@ -180,9 +179,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _ConnectButton extends StatelessWidget {
   const _ConnectButton(
-      {required this.state, required this.conn, required this.tokens});
+      {required this.state, required this.ctrl, required this.tokens});
   final EngineState state;
-  final ConnectionNotifier conn;
+  final HomeController ctrl;
   final ThemeTokens tokens;
 
   @override
@@ -211,13 +210,13 @@ class _ConnectButton extends StatelessWidget {
           ? null
           : () async {
               if (isConnected) {
-                await conn.disconnect();
+                await ctrl.disconnect();
               } else {
                 // 无已选节点时，弹出节点列表
-                if (conn.currentNode == null) {
+                if (ctrl.currentNode == null) {
                   context.push('/nodes');
                 } else {
-                  await conn.connectToNode(conn.currentNode!);
+                  await ctrl.connect();
                 }
               }
             },
@@ -274,7 +273,6 @@ class _ConnectButton extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _StatCard extends StatelessWidget {
@@ -339,13 +337,13 @@ class _StatCard extends StatelessWidget {
 }
 
 class _NodeCard extends StatelessWidget {
-  const _NodeCard({required this.conn, required this.tokens});
-  final ConnectionNotifier conn;
+  const _NodeCard({required this.ctrl, required this.tokens});
+  final HomeController ctrl;
   final ThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final node = conn.currentNode;
+    final node = ctrl.currentNode;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -380,13 +378,11 @@ class _NodeCard extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(node != null ? Icons.star : Icons.star_border,
-                color: node?.isFavorite == true
+                color: ctrl.isNodeFavorite
                     ? const Color(0xFFFBBF24)
                     : tokens.colorMuted,
                 size: 20),
-            onPressed: node == null
-                ? null
-                : () => context.read<NodeNotifier>().toggleFavorite(node.id),
+            onPressed: node == null ? null : () => ctrl.toggleFavorite(),
           ),
           TextButton(
             onPressed: () => context.push('/nodes'),
@@ -403,8 +399,8 @@ class _NodeCard extends StatelessWidget {
 }
 
 class _RoutingModeCard extends StatelessWidget {
-  const _RoutingModeCard({required this.conn, required this.tokens});
-  final ConnectionNotifier conn;
+  const _RoutingModeCard({required this.ctrl, required this.tokens});
+  final HomeController ctrl;
   final ThemeTokens tokens;
 
   @override
@@ -428,10 +424,10 @@ class _RoutingModeCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: List.generate(modes.length, (i) {
-              final selected = conn.useCase.currentMode == modes[i];
+              final selected = ctrl.currentMode == modes[i];
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => conn.switchMode(modes[i]),
+                  onTap: () => ctrl.switchRoutingMode(modes[i]),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -531,8 +527,8 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _ConnectionDurationChip extends StatefulWidget {
-  const _ConnectionDurationChip({required this.conn, required this.tokens});
-  final ConnectionNotifier conn;
+  const _ConnectionDurationChip({required this.ctrl, required this.tokens});
+  final HomeController ctrl;
   final ThemeTokens tokens;
 
   @override
@@ -552,8 +548,8 @@ class _ConnectionDurationChipState extends State<_ConnectionDurationChip> {
   String _fmt(Duration d) {
     final h = d.inHours.toString().padLeft(2, '0');
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$h:$m:$s';
+    final sec = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$sec';
   }
 
   @override
@@ -561,7 +557,7 @@ class _ConnectionDurationChipState extends State<_ConnectionDurationChip> {
     return StreamBuilder<int>(
       stream: _ticker,
       builder: (_, __) {
-        final dur = widget.conn.connectionDuration;
+        final dur = widget.ctrl.connectionDuration;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(

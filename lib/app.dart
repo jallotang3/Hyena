@@ -14,7 +14,7 @@ class HyenaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = SkinManager.instance.tokens;
-    final dummyProvider = ThemeTokenProvider(
+    final tokenProvider = ThemeTokenProvider(
       tokens: tokens,
       child: const SizedBox.shrink(),
     );
@@ -23,12 +23,11 @@ class HyenaApp extends StatelessWidget {
       tokens: tokens,
       child: Consumer2<AuthNotifier, LocaleNotifier>(
         builder: (context, authNotifier, localeNotifier, _) {
-          final auth = context.read<AuthUseCase>();
           return MaterialApp.router(
             title: 'HyenaVPN',
             debugShowCheckedModeBanner: false,
-            theme: dummyProvider.toMaterialTheme(),
-            routerConfig: AppRouter.router(auth),
+            theme: tokenProvider.toMaterialTheme(),
+            routerConfig: AppRouter.router(context.read<AuthUseCase>()),
             localizationsDelegates: S.localizationsDelegates,
             supportedLocales: S.supportedLocales,
             locale: localeNotifier.locale,

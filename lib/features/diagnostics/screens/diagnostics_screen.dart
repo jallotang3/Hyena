@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/diag_controller.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../infrastructure/logging/app_logger.dart';
-import '../../../infrastructure/logging/log_file_manager.dart';
-import '../../connection/connection_notifier.dart';
 
 class DiagnosticsScreen extends StatefulWidget {
   const DiagnosticsScreen({super.key});
@@ -16,7 +14,6 @@ class DiagnosticsScreen extends StatefulWidget {
 }
 
 class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
-  List<String> _logs = [];
   bool _running = false;
   Timer? _refreshTimer;
   final _scrollCtrl = ScrollController();
@@ -24,9 +21,8 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLogs();
     _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted) _loadLogs();
+      if (mounted) context.read<DiagController>().refreshLogs();
     });
   }
 
@@ -37,42 +33,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     super.dispose();
   }
 
-  void _loadLogs() {
-    final latest = AppLogger.recentLogs;
-    if (latest.length != _logs.length) {
-      setState(() => _logs = latest);
-    }
-  }
-
   Future<void> _runDiagnostics() async {
-    final conn = context.read<ConnectionNotifier>();
     setState(() => _running = true);
-
-    AppLogger.i('[Diag] DNS 检测开始...', tag: LogTag.network);
-    await Future.delayed(const Duration(milliseconds: 500));
-    AppLogger.i('[Diag] DNS OK', tag: LogTag.network);
-
-    AppLogger.i('[Diag] 网络连通性检测...', tag: LogTag.network);
-    await Future.delayed(const Duration(milliseconds: 500));
-    AppLogger.i('[Diag] 网络 OK', tag: LogTag.network);
-
-    AppLogger.i('[Diag] 内核状态: ${conn.state.name}', tag: LogTag.vpn);
-
-    if (conn.connectedSince != null) {
-      final dur = conn.connectionDuration;
-      AppLogger.i(
-        '[Diag] 连接时长: ${dur.inMinutes}m ${dur.inSeconds % 60}s',
-        tag: LogTag.vpn,
-      );
-    }
-
-    _loadLogs();
+    await context.read<DiagController>().runDiagnostics();
     if (mounted) setState(() => _running = false);
   }
 
   Future<void> _exportLogs() async {
     try {
-      await LogFileManager.instance.shareExport();
+      await context.read<DiagController>().exportLogs();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -114,32 +83,36 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             ),
           ),
           Expanded(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: _logs.isEmpty
-                  ? Center(
-                      child: Text(s.diagnosticsEmpty,
-                          style: theme.textTheme.bodySmall))
-                  : ListView.builder(
-                      controller: _scrollCtrl,
-                      reverse: true,
-                      itemCount: _logs.length,
-                      itemBuilder: (_, i) {
-                        final idx = _logs.length - 1 - i;
-                        return Text(
-                          _logs[idx],
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                            height: 1.6,
-                          ),
-                        );
-                      },
-                    ),
+            child: Consumer<DiagController>(
+              builder: (_, ctrl, __) {
+                final logs = ctrl.logs;
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: logs.isEmpty
+                      ? Center(
+                          child: Text(s.diagnosticsEmpty,
+                              style: theme.textTheme.bodySmall))
+                      : ListView.builder(
+                          controller: _scrollCtrl,
+                          reverse: true,
+                          itemCount: logs.length,
+                          itemBuilder: (_, i) {
+                            return Text(
+                              logs[i],
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontFamily: 'monospace',
+                                height: 1.6,
+                              ),
+                            );
+                          },
+                        ),
+                );
+              },
             ),
           ),
         ],

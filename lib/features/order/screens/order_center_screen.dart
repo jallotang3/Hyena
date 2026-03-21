@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/order_controller.dart';
 import '../../../core/models/commercial/order.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../order_use_case.dart';
 
 class OrderCenterScreen extends StatefulWidget {
   const OrderCenterScreen({super.key});
@@ -14,34 +13,12 @@ class OrderCenterScreen extends StatefulWidget {
 }
 
 class _OrderCenterScreenState extends State<OrderCenterScreen> {
-  List<Order> _orders = [];
-  bool _loading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _loadOrders();
-  }
-
-  Future<void> _loadOrders() async {
-    setState(() {
-      _loading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<OrderController>().fetchOrders();
     });
-    final result = await context.read<OrderUseCase>().fetchOrders();
-    if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _orders = result.value;
-        _loading = false;
-      });
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
   }
 
   @override
@@ -49,30 +26,37 @@ class _OrderCenterScreenState extends State<OrderCenterScreen> {
     final s = S.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(s.orders)),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _ErrorRetry(message: _error!, onRetry: _loadOrders)
-              : _orders.isEmpty
-                  ? Center(child: Text(s.noOrders))
-                  : RefreshIndicator(
-                      onRefresh: _loadOrders,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _orders.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (_, i) => _OrderCard(
-                            order: _orders[i], onRefresh: _loadOrders),
-                      ),
-                    ),
+      body: Consumer<OrderController>(
+        builder: (_, ctrl, __) {
+          if (ctrl.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (ctrl.error != null) {
+            return _ErrorRetry(
+                message: ctrl.error!,
+                onRetry: () => ctrl.fetchOrders());
+          }
+          if (ctrl.orders.isEmpty) {
+            return Center(child: Text(s.noOrders));
+          }
+          return RefreshIndicator(
+            onRefresh: () => ctrl.fetchOrders(),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: ctrl.orders.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (_, i) => _OrderCard(order: ctrl.orders[i]),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
 class _OrderCard extends StatelessWidget {
-  const _OrderCard({required this.order, required this.onRefresh});
+  const _OrderCard({required this.order});
   final Order order;
-  final VoidCallback onRefresh;
 
   Color _statusColor(OrderStatus s, ThemeData t) {
     switch (s) {
@@ -191,15 +175,12 @@ class _OrderCard extends StatelessWidget {
       ),
     );
     if (confirm != true || !context.mounted) return;
-    final result = await context.read<OrderUseCase>().cancelOrder(tradeNo: order.tradeNo);
-    if (context.mounted) {
-      if (result.isSuccess) {
-        onRefresh();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text((result as Failure).error.message)),
-        );
-      }
+    final ctrl = context.read<OrderController>();
+    final ok = await ctrl.cancelOrder(order.tradeNo);
+    if (context.mounted && !ok && ctrl.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ctrl.error!)),
+      );
     }
   }
 }

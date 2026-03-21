@@ -5,11 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/order_controller.dart';
+import '../../../controllers/store_controller.dart';
 import '../../../core/models/commercial/order.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../store/store_use_case.dart';
-import '../order_use_case.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   const OrderDetailScreen({super.key, required this.tradeNo});
@@ -42,35 +41,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       _loading = true;
       _error = null;
     });
-    final uc = context.read<OrderUseCase>();
-    final result = await uc.fetchOrderDetail(tradeNo: widget.tradeNo);
+    final ctrl = context.read<OrderController>();
+    await ctrl.fetchOrderDetail(widget.tradeNo);
     if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _order = result.value;
-        _loading = false;
-      });
-      if (_order!.isPending) _startPolling();
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
+    setState(() {
+      _order = ctrl.currentOrder;
+      _error = ctrl.error;
+      _loading = false;
+    });
+    if (_order != null && _order!.isPending) _startPolling();
   }
 
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      final uc = context.read<OrderUseCase>();
-      final statusResult = await uc.checkOrderStatus(tradeNo: widget.tradeNo);
+      final ctrl = context.read<OrderController>();
+      final paid = await ctrl.checkOrderStatus(widget.tradeNo);
       if (!mounted) return;
-      if (statusResult.isSuccess) {
-        final newStatus = OrderStatus.fromCode(statusResult.value);
-        if (newStatus != _order?.status) {
-          _loadDetail();
-          if (newStatus != OrderStatus.pending) _pollTimer?.cancel();
-        }
+      if (paid || (ctrl.currentOrder != null && ctrl.currentOrder!.status != _order?.status)) {
+        _loadDetail();
+        if (paid) _pollTimer?.cancel();
       }
     });
   }
@@ -187,12 +177,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _payOrder(BuildContext ctx) async {
-    final uc = ctx.read<StoreUseCase>();
-    final methodsResult = await uc.fetchPaymentMethods();
+    final storeCtrl = ctx.read<StoreController>();
+    await storeCtrl.fetchPaymentMethods();
     if (!ctx.mounted) return;
-    if (!methodsResult.isSuccess) return;
 
-    final methods = methodsResult.value.where((m) => m.enable).toList();
+    final methods =
+        storeCtrl.paymentMethods.where((m) => m.enable).toList();
     final methodId = methods.length <= 1
         ? methods.firstOrNull?.id ?? 1
         : await showModalBottomSheet<int>(
@@ -221,16 +211,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           );
 
     if (methodId == null || !ctx.mounted) return;
-    final payResult =
-        await uc.checkout(tradeNo: widget.tradeNo, methodId: methodId);
-    if (!ctx.mounted) return;
-    if (payResult.isSuccess) {
-      final pr = payResult.value;
-      if (pr.redirectUrl != null) {
-        ctx.push('/payment-result', extra: pr);
-      } else {
-        _loadDetail();
-      }
+    final pr = await storeCtrl.checkout(widget.tradeNo, methodId);
+    if (!ctx.mounted || pr == null) return;
+    if (pr.redirectUrl != null) {
+      ctx.push('/payment-result', extra: pr);
+    } else {
+      _loadDetail();
     }
   }
 
@@ -249,8 +235,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       ),
     );
     if (confirmed != true || !ctx.mounted) return;
-    final uc = ctx.read<OrderUseCase>();
-    await uc.cancelOrder(tradeNo: widget.tradeNo);
+    final ctrl = ctx.read<OrderController>();
+    await ctrl.cancelOrder(widget.tradeNo);
     if (ctx.mounted) _loadDetail();
   }
 

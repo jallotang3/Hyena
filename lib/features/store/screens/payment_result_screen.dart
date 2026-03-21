@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../controllers/order_controller.dart';
 import '../../../core/models/commercial/order.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../order/order_use_case.dart';
 
 class PaymentResultScreen extends StatefulWidget {
   const PaymentResultScreen({super.key, required this.paymentResult});
@@ -47,16 +47,12 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
 
   void _startPolling() {
     _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-      final uc = context.read<OrderUseCase>();
-      final result = await uc.checkOrderStatus(
-          tradeNo: widget.paymentResult.tradeNo);
+      final ctrl = context.read<OrderController>();
+      final paid = await ctrl.checkOrderStatus(widget.paymentResult.tradeNo);
       if (!mounted) return;
-      if (result.isSuccess) {
-        final status = OrderStatus.fromCode(result.value);
-        if (status == OrderStatus.completed || status == OrderStatus.processing) {
-          _pollTimer?.cancel();
-          setState(() => _paid = true);
-        }
+      if (paid) {
+        _pollTimer?.cancel();
+        setState(() => _paid = true);
       }
     });
   }

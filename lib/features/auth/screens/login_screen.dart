@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../auth/auth_use_case.dart';
+import '../../../controllers/auth_controller.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
 
@@ -34,16 +34,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
 
-    final auth = context.read<AuthUseCase>();
-    final result = await auth.login(_emailCtrl.text.trim(), _pwdCtrl.text);
+    final ctrl = context.read<AuthController>();
+    final ok = await ctrl.login(_emailCtrl.text.trim(), _pwdCtrl.text);
 
     if (!mounted) return;
-    setState(() => _loading = false);
+    setState(() {
+      _loading = false;
+      _error = ctrl.error;
+    });
 
-    result.when(
-      success: (_) => context.go('/home'),
-      failure: (e) => setState(() => _error = e.message),
-    );
+    if (ok) context.go('/home');
   }
 
   @override

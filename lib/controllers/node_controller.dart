@@ -23,11 +23,14 @@ class NodeController extends ChangeNotifier {
   // ── 状态属性 ──
   List<ProxyNode> get nodes => _nodeNotifier.nodes;
   List<ProxyNode> get favoriteNodes => _nodeNotifier.favoriteNodes;
-  bool get isLoading => _nodeNotifier.loadState == NodeLoadState.loading;
+  NodeLoadState get loadState => _nodeNotifier.loadState;
+  bool get isLoading => loadState == NodeLoadState.loading;
   bool get isTesting => _nodeNotifier.isTesting;
-  String? get error => _nodeNotifier.errorMessage;
+  String? get errorMessage => _nodeNotifier.errorMessage;
+  String? get error => errorMessage;
   NodeSortMode get sortMode => _nodeNotifier.sortMode;
-  ProxyNode? get selectedNode => _conn.currentNode;
+  ProxyNode? get currentNode => _conn.currentNode;
+  ProxyNode? get selectedNode => currentNode;
 
   // ── 操作方法 ──
   Future<void> load({bool forceRefresh = false}) async {

@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/models/panel_user.dart';
-import '../../../core/result.dart';
-import '../../../features/auth/auth_notifier.dart';
+import '../../../controllers/profile_controller.dart';
 import '../../../l10n/app_localizations.dart';
-import '../profile_use_case.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,21 +13,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  PanelUser? _user;
-  bool _loading = true;
-
   @override
   void initState() {
     super.initState();
-    _loadUser();
-  }
-
-  Future<void> _loadUser() async {
-    final result = await context.read<ProfileUseCase>().fetchUser();
-    if (!mounted) return;
-    setState(() {
-      _user = result.isSuccess ? result.value : null;
-      _loading = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileController>().fetchUser();
     });
   }
 
@@ -47,17 +34,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _ProfileContent(user: _user, onRefresh: _loadUser),
+      body: Consumer<ProfileController>(
+        builder: (_, ctrl, __) {
+          if (ctrl.isLoading && ctrl.user == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return _ProfileContent(ctrl: ctrl);
+        },
+      ),
     );
   }
 }
 
 class _ProfileContent extends StatelessWidget {
-  const _ProfileContent({required this.user, required this.onRefresh});
-  final PanelUser? user;
-  final VoidCallback onRefresh;
+  const _ProfileContent({required this.ctrl});
+  final ProfileController ctrl;
 
   String _formatBytes(int bytes) {
     if (bytes <= 0) return '0 B';
@@ -78,9 +69,9 @@ class _ProfileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context)!;
     final theme = Theme.of(context);
-    final u = user;
+    final u = ctrl.user;
     return RefreshIndicator(
-      onRefresh: () async => onRefresh(),
+      onRefresh: () async => ctrl.fetchUser(),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -269,18 +260,13 @@ class _ProfileContent extends StatelessWidget {
       );
       return;
     }
-    final uc = context.read<ProfileUseCase>();
-    final result = await uc.changePassword(
-        oldPassword: oldPw.text, newPassword: newPw.text);
+    final profileCtrl = context.read<ProfileController>();
+    final ok = await profileCtrl.changePassword(oldPw.text, newPw.text);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.isSuccess
-              ? s.passwordChanged
-              : (result as Failure).error.message),
-          backgroundColor: result.isSuccess
-              ? null
-              : Theme.of(context).colorScheme.error,
+          content: Text(ok ? s.passwordChanged : (profileCtrl.error ?? '')),
+          backgroundColor: ok ? null : Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -303,7 +289,7 @@ class _ProfileContent extends StatelessWidget {
       ),
     );
     if (confirm != true || !context.mounted) return;
-    await context.read<AuthNotifier>().logout();
+    await context.read<ProfileController>().logout();
     if (context.mounted) context.go('/login');
   }
 }

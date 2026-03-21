@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/traffic_chart_controller.dart';
 import '../../../core/models/commercial/notice.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../stat_use_case.dart';
 
 class TrafficChartScreen extends StatefulWidget {
   const TrafficChartScreen({super.key});
@@ -14,35 +13,12 @@ class TrafficChartScreen extends StatefulWidget {
 }
 
 class _TrafficChartScreenState extends State<TrafficChartScreen> {
-  List<TrafficRecord> _records = [];
-  bool _loading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TrafficChartController>().fetchTrafficLog();
     });
-    final uc = context.read<StatUseCase>();
-    final result = await uc.fetchTrafficLog();
-    if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _records = result.value;
-        _loading = false;
-      });
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
   }
 
   String _formatBytes(int bytes) {
@@ -61,42 +37,52 @@ class _TrafficChartScreenState extends State<TrafficChartScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(s.trafficUsage)),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!),
-                      const SizedBox(height: 16),
-                      FilledButton.tonal(onPressed: _load, child: Text(s.retry)),
-                    ],
-                  ),
-                )
-              : _records.isEmpty
-                  ? Center(child: Text(s.noTrafficData))
-                  : _buildChart(theme),
+      body: Consumer<TrafficChartController>(
+        builder: (_, ctrl, __) {
+          if (ctrl.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (ctrl.error != null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(ctrl.error!),
+                  const SizedBox(height: 16),
+                  FilledButton.tonal(
+                      onPressed: () => ctrl.fetchTrafficLog(),
+                      child: Text(s.retry)),
+                ],
+              ),
+            );
+          }
+          if (ctrl.records.isEmpty) {
+            return Center(child: Text(s.noTrafficData));
+          }
+          return _buildChart(theme, ctrl);
+        },
+      ),
     );
   }
 
-  Widget _buildChart(ThemeData theme) {
-    final maxTotal = _records.fold<int>(
+  Widget _buildChart(ThemeData theme, TrafficChartController ctrl) {
+    final records = ctrl.records;
+    final maxTotal = records.fold<int>(
         0, (prev, r) => r.totalBytes > prev ? r.totalBytes : prev);
     final maxHeight = maxTotal > 0 ? maxTotal.toDouble() : 1.0;
 
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => ctrl.fetchTrafficLog(),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SummaryCard(records: _records, theme: theme),
+          _SummaryCard(records: records, theme: theme),
           const SizedBox(height: 16),
           SizedBox(
             height: 240,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: _records.map((r) {
+              children: records.map((r) {
                 final upRatio = r.uploadBytes / maxHeight;
                 final downRatio = r.downloadBytes / maxHeight;
                 final day = r.date.day.toString();
@@ -155,7 +141,7 @@ class _TrafficChartScreenState extends State<TrafficChartScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          ..._records.reversed.map((r) => ListTile(
+          ...records.reversed.map((r) => ListTile(
                 dense: true,
                 title: Text('${r.date.month}/${r.date.day}'),
                 subtitle: Text(

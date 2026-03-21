@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../auth/auth_use_case.dart';
+import '../../../controllers/auth_controller.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -40,15 +40,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _sendingCode = true;
       _error = null;
     });
-    final auth = context.read<AuthUseCase>();
-    final result = await auth.sendEmailCode(email);
+    final ctrl = context.read<AuthController>();
+    final ok = await ctrl.sendEmailCode(email);
     if (!mounted) return;
-    setState(() => _sendingCode = false);
-    result.when(
-      success: (_) => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reset code sent!'))),
-      failure: (e) => setState(() => _error = e.message),
-    );
+    setState(() {
+      _sendingCode = false;
+      _error = ctrl.error;
+    });
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reset code sent!')));
+    }
   }
 
   Future<void> _reset() async {
@@ -57,23 +59,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _loading = true;
       _error = null;
     });
-    final auth = context.read<AuthUseCase>();
-    final result = await auth.resetPassword(
+    final ctrl = context.read<AuthController>();
+    final ok = await ctrl.resetPassword(
       _emailCtrl.text.trim(),
       _codeCtrl.text.trim(),
       _pwdCtrl.text,
     );
     if (!mounted) return;
-    setState(() => _loading = false);
-    result.when(
-      success: (_) {
-        setState(() => _success = 'Password reset! Please sign in.');
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) context.go('/login');
-        });
-      },
-      failure: (e) => setState(() => _error = e.message),
-    );
+    setState(() {
+      _loading = false;
+      _error = ctrl.error;
+    });
+    if (ok) {
+      setState(() => _success = 'Password reset! Please sign in.');
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) context.go('/login');
+      });
+    }
   }
 
   @override

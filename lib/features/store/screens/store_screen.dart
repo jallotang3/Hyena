@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/store_controller.dart';
 import '../../../core/models/commercial/plan_item.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../store_use_case.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -15,35 +14,12 @@ class StoreScreen extends StatefulWidget {
 }
 
 class _StoreScreenState extends State<StoreScreen> {
-  List<PlanItem> _plans = [];
-  bool _loading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _loadPlans();
-  }
-
-  Future<void> _loadPlans() async {
-    setState(() {
-      _loading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StoreController>().fetchPlans();
     });
-    final uc = context.read<StoreUseCase>();
-    final result = await uc.fetchPlans();
-    if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _plans = result.value.where((p) => p.show && p.sell).toList();
-        _loading = false;
-      });
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
   }
 
   @override
@@ -51,11 +27,20 @@ class _StoreScreenState extends State<StoreScreen> {
     final s = S.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(s.store)),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _ErrorView(message: _error!, onRetry: _loadPlans)
-              : _PlanList(plans: _plans),
+      body: Consumer<StoreController>(
+        builder: (_, ctrl, __) {
+          if (ctrl.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (ctrl.error != null) {
+            return _ErrorView(
+                message: ctrl.error!, onRetry: () => ctrl.fetchPlans());
+          }
+          final sellable =
+              ctrl.plans.where((p) => p.show && p.sell).toList();
+          return _PlanList(plans: sellable);
+        },
+      ),
     );
   }
 }
@@ -241,46 +226,42 @@ class _PlanCardState extends State<_PlanCard> {
   }
 
   Future<bool> _submitOrder(BuildContext context, String? coupon) async {
-    final uc = context.read<StoreUseCase>();
-    final result = await uc.createOrder(
-      planId: plan.id,
-      period: _selectedPeriod!,
-      couponCode: coupon,
-    );
-    if (!context.mounted) return false;
-    if (result.isSuccess) {
-      final tradeNo = result.value;
-      final methodId = await _selectPaymentMethod(context, uc);
-      if (methodId == null || !context.mounted) return false;
-      final payResult = await uc.checkout(tradeNo: tradeNo, methodId: methodId);
-      if (context.mounted && payResult.isSuccess) {
-        final pr = payResult.value;
-        if (pr.redirectUrl != null && context.mounted) {
-          context.push('/payment-result', extra: pr);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context)!.orderCreated)),
-          );
-        }
+    final ctrl = context.read<StoreController>();
+    final tradeNo = await ctrl.createOrder(plan.id, _selectedPeriod!, coupon);
+    if (tradeNo == null || !context.mounted) {
+      if (context.mounted && ctrl.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ctrl.error!),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
-      return true;
+      return false;
     }
-    if (context.mounted) {
+
+    final methodId = await _selectPaymentMethod(context, ctrl);
+    if (methodId == null || !context.mounted) return false;
+
+    final pr = await ctrl.checkout(tradeNo, methodId);
+    if (pr == null || !context.mounted) return false;
+
+    if (pr.redirectUrl != null && context.mounted) {
+      context.push('/payment-result', extra: pr);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text((result as Failure).error.message),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+        SnackBar(content: Text(S.of(context)!.orderCreated)),
       );
     }
-    return false;
+    return true;
   }
 
-  Future<int?> _selectPaymentMethod(BuildContext ctx, StoreUseCase uc) async {
-    final methodsResult = await uc.fetchPaymentMethods();
+  Future<int?> _selectPaymentMethod(
+      BuildContext ctx, StoreController ctrl) async {
+    await ctrl.fetchPaymentMethods();
     if (!ctx.mounted) return null;
-    if (!methodsResult.isSuccess) return 1;
-    final methods = methodsResult.value.where((m) => m.enable).toList();
+    final methods =
+        ctrl.paymentMethods.where((m) => m.enable).toList();
     if (methods.isEmpty) return 1;
     if (methods.length == 1) return methods.first.id;
 

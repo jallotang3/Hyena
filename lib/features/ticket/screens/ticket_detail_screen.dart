@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/ticket_controller.dart';
 import '../../../core/models/commercial/ticket.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../ticket_use_case.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({super.key, required this.ticketId});
@@ -40,22 +39,15 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       _loading = true;
       _error = null;
     });
-    final result = await context
-        .read<TicketUseCase>()
-        .fetchTicketDetail(ticketId: widget.ticketId);
+    final ctrl = context.read<TicketController>();
+    await ctrl.fetchTicketDetail(widget.ticketId);
     if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _ticket = result.value;
-        _loading = false;
-      });
-      _scrollToBottom();
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
+    setState(() {
+      _ticket = ctrl.currentTicket;
+      _error = ctrl.error;
+      _loading = false;
+    });
+    if (_ticket != null) _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -70,16 +62,16 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     final text = _replyCtrl.text.trim();
     if (text.isEmpty) return;
     setState(() => _sending = true);
-    final result = await context.read<TicketUseCase>().replyTicket(
-        ticketId: widget.ticketId, message: text);
+    final ctrl = context.read<TicketController>();
+    final ok = await ctrl.replyTicket(widget.ticketId, text);
     if (!mounted) return;
     setState(() => _sending = false);
-    if (result.isSuccess) {
+    if (ok) {
       _replyCtrl.clear();
       await _load();
-    } else {
+    } else if (ctrl.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text((result as Failure).error.message)),
+        SnackBar(content: Text(ctrl.error!)),
       );
     }
   }
@@ -101,15 +93,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       ),
     );
     if (confirm != true || !mounted) return;
-    final result = await context
-        .read<TicketUseCase>()
-        .closeTicket(ticketId: widget.ticketId);
+    final ctrl = context.read<TicketController>();
+    final ok = await ctrl.closeTicket(widget.ticketId);
     if (mounted) {
-      if (result.isSuccess) {
+      if (ok) {
         Navigator.of(context).pop();
-      } else {
+      } else if (ctrl.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text((result as Failure).error.message)),
+          SnackBar(content: Text(ctrl.error!)),
         );
       }
     }

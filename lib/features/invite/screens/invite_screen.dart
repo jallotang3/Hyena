@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/profile_controller.dart';
 import '../../../core/models/commercial/invite.dart';
-import '../../../core/result.dart';
 import '../../../l10n/app_localizations.dart';
-import '../invite_use_case.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key});
@@ -15,48 +14,12 @@ class InviteScreen extends StatefulWidget {
 }
 
 class _InviteScreenState extends State<InviteScreen> {
-  InviteSummary? _summary;
-  bool _loading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileController>().fetchInviteSummary();
     });
-    final result =
-        await context.read<InviteUseCase>().fetchInviteSummary();
-    if (!mounted) return;
-    if (result.isSuccess) {
-      setState(() {
-        _summary = result.value;
-        _loading = false;
-      });
-    } else {
-      setState(() {
-        _error = (result as Failure).error.message;
-        _loading = false;
-      });
-    }
-  }
-
-  Future<void> _generateCode() async {
-    final result =
-        await context.read<InviteUseCase>().generateInviteCode();
-    if (!mounted) return;
-    if (result.isSuccess) {
-      await _load();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text((result as Failure).error.message)),
-      );
-    }
   }
 
   @override
@@ -64,44 +27,46 @@ class _InviteScreenState extends State<InviteScreen> {
     final s = S.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(s.invite)),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!),
-                      const SizedBox(height: 16),
-                      FilledButton.tonal(
-                          onPressed: _load, child: Text(s.retry)),
-                    ],
-                  ),
-                )
-              : _InviteContent(
-                  summary: _summary!,
-                  onRefresh: _load,
-                  onGenerate: _generateCode,
-                ),
+      body: Consumer<ProfileController>(
+        builder: (_, ctrl, __) {
+          if (ctrl.isLoading && ctrl.inviteSummary == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (ctrl.error != null && ctrl.inviteSummary == null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(ctrl.error!),
+                  const SizedBox(height: 16),
+                  FilledButton.tonal(
+                      onPressed: () => ctrl.fetchInviteSummary(),
+                      child: Text(s.retry)),
+                ],
+              ),
+            );
+          }
+          if (ctrl.inviteSummary == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return _InviteContent(ctrl: ctrl);
+        },
+      ),
     );
   }
 }
 
 class _InviteContent extends StatelessWidget {
-  const _InviteContent(
-      {required this.summary,
-      required this.onRefresh,
-      required this.onGenerate});
-  final InviteSummary summary;
-  final VoidCallback onRefresh;
-  final VoidCallback onGenerate;
+  const _InviteContent({required this.ctrl});
+  final ProfileController ctrl;
 
   @override
   Widget build(BuildContext context) {
     final s = S.of(context)!;
     final theme = Theme.of(context);
+    final summary = ctrl.inviteSummary!;
     return RefreshIndicator(
-      onRefresh: () async => onRefresh(),
+      onRefresh: () async => ctrl.fetchInviteSummary(),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -133,7 +98,7 @@ class _InviteContent extends StatelessWidget {
             children: [
               Text(s.inviteCodes, style: theme.textTheme.titleSmall),
               TextButton.icon(
-                onPressed: onGenerate,
+                onPressed: () => ctrl.generateInviteCode(),
                 icon: const Icon(Icons.add, size: 16),
                 label: Text(s.generate),
               ),

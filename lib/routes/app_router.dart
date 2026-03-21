@@ -1,5 +1,17 @@
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../controllers/home_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/node_controller.dart';
+import '../controllers/store_controller.dart';
+import '../controllers/order_controller.dart';
+import '../controllers/ticket_controller.dart';
+import '../controllers/profile_controller.dart';
+import '../controllers/settings_controller.dart';
+import '../controllers/diag_controller.dart';
+import '../controllers/traffic_chart_controller.dart';
+import '../controllers/splash_controller.dart';
 import '../core/models/commercial/order.dart';
 import '../features/auth/auth_use_case.dart';
 import '../features/auth/screens/splash_screen.dart';
@@ -18,6 +30,7 @@ import '../features/settings/screens/settings_screen.dart';
 import '../features/store/screens/store_screen.dart';
 import '../features/store/screens/payment_result_screen.dart';
 import '../features/ticket/screens/ticket_list_screen.dart';
+import '../skins/skin_manager.dart';
 
 class AppRouter {
   static GoRouter router(AuthUseCase auth) {
@@ -34,16 +47,62 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
-        GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-        GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
         GoRoute(
-            path: '/forgot-password',
-            builder: (_, __) => const ForgotPasswordScreen()),
-        GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-        GoRoute(path: '/nodes', builder: (_, __) => const NodeListScreen()),
-        GoRoute(path: '/store', builder: (_, __) => const StoreScreen()),
-        GoRoute(path: '/orders', builder: (_, __) => const OrderCenterScreen()),
+          path: '/splash',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.splashPage(
+                  ctx.read<SplashController>()) ??
+              const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.loginPage(
+                  ctx.read<AuthController>()) ??
+              const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/register',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.registerPage(
+                  ctx.read<AuthController>()) ??
+              const RegisterScreen(),
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.forgotPasswordPage(
+                  ctx.read<AuthController>()) ??
+              const ForgotPasswordScreen(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.homePage(
+                  ctx.read<HomeController>()) ??
+              const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/nodes',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.nodePage(
+                  ctx.read<NodeController>()) ??
+              const NodeListScreen(),
+        ),
+        GoRoute(
+          path: '/store',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.storePage(
+                  ctx.read<StoreController>()) ??
+              const StoreScreen(),
+        ),
+        GoRoute(
+          path: '/orders',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.orderCenterPage(
+                  ctx.read<OrderController>()) ??
+              const OrderCenterScreen(),
+        ),
         GoRoute(
           path: '/orders/:tradeNo',
           builder: (_, state) => OrderDetailScreen(
@@ -57,16 +116,47 @@ class AppRouter {
           ),
         ),
         GoRoute(
-            path: '/tickets', builder: (_, __) => const TicketListScreen()),
-        GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
-        GoRoute(path: '/invite', builder: (_, __) => const InviteScreen()),
-        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+          path: '/tickets',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.ticketListPage(
+                  ctx.read<TicketController>()) ??
+              const TicketListScreen(),
+        ),
         GoRoute(
-            path: '/diagnostics',
-            builder: (_, __) => const DiagnosticsScreen()),
+          path: '/profile',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.profilePage(
+                  ctx.read<ProfileController>()) ??
+              const ProfileScreen(),
+        ),
         GoRoute(
-            path: '/traffic-chart',
-            builder: (_, __) => const TrafficChartScreen()),
+          path: '/invite',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.invitePage(
+                  ctx.read<ProfileController>()) ??
+              const InviteScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.settingsPage(
+                  ctx.read<SettingsController>()) ??
+              const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/diagnostics',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.diagnosticsPage(
+                  ctx.read<DiagController>()) ??
+              const DiagnosticsScreen(),
+        ),
+        GoRoute(
+          path: '/traffic-chart',
+          builder: (ctx, __) =>
+              SkinManager.instance.pageFactory.trafficChartPage(
+                  ctx.read<TrafficChartController>()) ??
+              const TrafficChartScreen(),
+        ),
       ],
     );
   }

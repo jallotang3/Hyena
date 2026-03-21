@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../controllers/node_controller.dart';
 import '../../../core/models/proxy_node.dart';
-import '../../../features/connection/connection_notifier.dart';
-import '../../../infrastructure/storage/preferences.dart';
+import '../../../features/node/node_notifier.dart';
 import '../../../l10n/app_localizations.dart';
-import '../node_notifier.dart';
 
 class NodeListScreen extends StatefulWidget {
   const NodeListScreen({super.key});
@@ -24,7 +23,7 @@ class _NodeListScreenState extends State<NodeListScreen>
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<NodeNotifier>().load();
+      context.read<NodeController>().load();
     });
   }
 
@@ -49,25 +48,25 @@ class _NodeListScreenState extends State<NodeListScreen>
           ],
         ),
         actions: [
-          Consumer<NodeNotifier>(
-            builder: (_, notifier, __) => IconButton(
-              icon: notifier.isTesting
+          Consumer<NodeController>(
+            builder: (_, ctrl, __) => IconButton(
+              icon: ctrl.isTesting
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.speed),
               tooltip: s.nodesTestAll,
-              onPressed: notifier.isTesting
+              onPressed: ctrl.isTesting
                   ? null
-                  : () => notifier.testAllNodes(),
+                  : () => ctrl.testAllNodes(),
             ),
           ),
           PopupMenuButton<NodeSortMode>(
             icon: const Icon(Icons.sort),
             tooltip: s.nodesSortLabel,
             onSelected: (mode) =>
-                context.read<NodeNotifier>().setSortMode(mode),
+                context.read<NodeController>().setSortMode(mode),
             itemBuilder: (_) => [
               PopupMenuItem(
                   value: NodeSortMode.name, child: Text(s.nodesSortName)),
@@ -81,7 +80,7 @@ class _NodeListScreenState extends State<NodeListScreen>
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () =>
-                context.read<NodeNotifier>().load(forceRefresh: true),
+                context.read<NodeController>().load(forceRefresh: true),
           ),
         ],
       ),
@@ -116,7 +115,7 @@ class _SearchBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: TextField(
         controller: controller,
-        onChanged: (v) => context.read<NodeNotifier>().setFilter(v),
+        onChanged: (v) => context.read<NodeController>().setFilter(v),
         decoration: InputDecoration(
           hintText: s.searchNodes,
           prefixIcon: const Icon(Icons.search, size: 20),
@@ -125,7 +124,7 @@ class _SearchBar extends StatelessWidget {
                   icon: const Icon(Icons.clear, size: 18),
                   onPressed: () {
                     controller.clear();
-                    context.read<NodeNotifier>().setFilter('');
+                    context.read<NodeController>().setFilter('');
                   },
                 )
               : null,
@@ -148,20 +147,19 @@ class _NodeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NodeNotifier>(builder: (_, notifier, __) {
-      if (notifier.loadState == NodeLoadState.loading) {
+    return Consumer<NodeController>(builder: (_, ctrl, __) {
+      if (ctrl.loadState == NodeLoadState.loading) {
         return const Center(child: CircularProgressIndicator());
       }
-      if (notifier.loadState == NodeLoadState.error) {
-        return _ErrorView(message: notifier.errorMessage ?? '');
+      if (ctrl.loadState == NodeLoadState.error) {
+        return _ErrorView(message: ctrl.errorMessage ?? '');
       }
 
-      final allNodes = useAll ? notifier.nodes : notifier.favoriteNodes;
+      final allNodes = useAll ? ctrl.nodes : ctrl.favoriteNodes;
       if (allNodes.isEmpty) {
         return _EmptyView(isFavorite: !useAll);
       }
 
-      // 按 group 分组
       final groups = <String, List<ProxyNode>>{};
       for (final n in allNodes) {
         final s = S.of(context)!;
@@ -170,7 +168,7 @@ class _NodeTab extends StatelessWidget {
 
       return RefreshIndicator(
         onRefresh: () =>
-            context.read<NodeNotifier>().load(forceRefresh: true),
+            context.read<NodeController>().load(forceRefresh: true),
         child: ListView(
           children: groups.entries.map((entry) {
             return _GroupSection(group: entry.key, nodes: entry.value);
@@ -225,18 +223,14 @@ class _NodeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final notifier = context.read<NodeNotifier>();
-    final conn = context.read<ConnectionNotifier>();
+    final ctrl = context.read<NodeController>();
 
-    final isActive = conn.currentNode?.id == node.id;
+    final isActive = ctrl.currentNode?.id == node.id;
 
     return ListTile(
       onTap: () async {
-        await notifier.setFavoriteAware(node.id);
-        if (context.mounted) {
-          await conn.connectToNode(node);
-          if (context.mounted) Navigator.of(context).pop();
-        }
+        await ctrl.selectAndConnect(node);
+        if (context.mounted) Navigator.of(context).pop();
       },
       leading: CircleAvatar(
         radius: 16,
@@ -278,7 +272,7 @@ class _NodeTile extends StatelessWidget {
               size: 20,
               color: node.isFavorite ? Colors.amber : null,
             ),
-            onPressed: () => notifier.toggleFavorite(node.id),
+            onPressed: () => ctrl.toggleFavorite(node.id),
           ),
         ],
       ),
@@ -304,7 +298,7 @@ class _ErrorView extends StatelessWidget {
           Text(message),
           const SizedBox(height: 16),
           FilledButton.tonal(
-            onPressed: () => context.read<NodeNotifier>().load(),
+            onPressed: () => context.read<NodeController>().load(),
             child: Text(s.retry),
           ),
         ],
@@ -334,8 +328,3 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-extension NodeNotifierExt on NodeNotifier {
-  Future<void> setFavoriteAware(String nodeId) async {
-    await AppPreferences.instance.setLastNodeId(nodeId);
-  }
-}
