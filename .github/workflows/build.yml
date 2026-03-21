@@ -151,7 +151,9 @@ jobs:
             --dart-define=SITE_ID=${{ needs.read-profile.outputs.site_id }} \
             --dart-define=SITE_NAME=${{ needs.read-profile.outputs.site_name }} \
             --dart-define=SKIN_ID=${{ needs.read-profile.outputs.skin_id }} \
-            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }}
+            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }} \
+            --dart-define=APP_NAME=${{ needs.read-profile.outputs.app_name }} \
+            --dart-define=PACKAGE_NAME=${{ needs.read-profile.outputs.package_name }}
 
       - name: Build App Bundle
         if: inputs.build_type == 'appbundle'
@@ -162,7 +164,9 @@ jobs:
             --dart-define=SITE_ID=${{ needs.read-profile.outputs.site_id }} \
             --dart-define=SITE_NAME=${{ needs.read-profile.outputs.site_name }} \
             --dart-define=SKIN_ID=${{ needs.read-profile.outputs.skin_id }} \
-            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }}
+            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }} \
+            --dart-define=APP_NAME=${{ needs.read-profile.outputs.app_name }} \
+            --dart-define=PACKAGE_NAME=${{ needs.read-profile.outputs.package_name }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -212,7 +216,9 @@ jobs:
             --dart-define=SITE_ID=${{ needs.read-profile.outputs.site_id }} `
             --dart-define=SITE_NAME=${{ needs.read-profile.outputs.site_name }} `
             --dart-define=SKIN_ID=${{ needs.read-profile.outputs.skin_id }} `
-            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }}
+            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }} `
+            --dart-define=APP_NAME=${{ needs.read-profile.outputs.app_name }} `
+            --dart-define=PACKAGE_NAME=${{ needs.read-profile.outputs.package_name }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

@@ -17,6 +17,7 @@ class OrderController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   bool _isPaid = false;
+  bool _pollingCancelled = false;
 
   // ── 状态属性 ──
   List<Order> get orders => _orders;
@@ -88,10 +89,22 @@ class OrderController extends ChangeNotifier {
   }
 
   Future<void> pollPaymentStatus(String tradeNo) async {
+    _pollingCancelled = false;
     for (int i = 0; i < 100; i++) {
+      if (_pollingCancelled) return;
       final paid = await checkOrderStatus(tradeNo);
       if (paid) return;
       await Future.delayed(const Duration(seconds: 3));
     }
+  }
+
+  void cancelPolling() {
+    _pollingCancelled = true;
+  }
+
+  @override
+  void dispose() {
+    _pollingCancelled = true;
+    super.dispose();
   }
 }

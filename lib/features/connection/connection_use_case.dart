@@ -14,6 +14,7 @@ class ConnectionUseCase {
   ProxyNode? _currentNode;
   RoutingMode _currentMode = RoutingMode.rule;
   int _retryCount = 0;
+  bool _isRetrying = false;
   DateTime? _connectedSince;
   StreamSubscription<EngineState>? _autoReconnectSub;
 
@@ -41,12 +42,14 @@ class ConnectionUseCase {
     _currentNode = node;
     _currentMode = mode ?? _currentMode;
     _retryCount = 0;
+    _isRetrying = false;
     _connectedSince = null;
     await _doConnect();
   }
 
   Future<void> disconnect() async {
     _retryCount = 0;
+    _isRetrying = false;
     _connectedSince = null;
     await _engine.disconnect();
     _currentNode = null;
@@ -69,13 +72,16 @@ class ConnectionUseCase {
 
   Future<void> retry() async {
     if (_currentNode == null) return;
+    if (_isRetrying) return;
     if (_retryCount >= maxRetries) {
       AppLogger.w('达到最大重试次数 ($maxRetries)', tag: LogTag.vpn);
       return;
     }
+    _isRetrying = true;
     _retryCount++;
     AppLogger.i('重试连接 ($_retryCount/$maxRetries)', tag: LogTag.vpn);
     await Future.delayed(Duration(seconds: _retryCount));
+    _isRetrying = false;
     await _doConnect();
   }
 
@@ -83,15 +89,19 @@ class ConnectionUseCase {
     try {
       await _engine.connect(_currentNode!, _currentMode);
       _connectedSince = DateTime.now();
+      _retryCount = 0;
     } catch (e) {
       AppLogger.e('连接失败: $e', tag: LogTag.vpn);
-      if (_retryCount < maxRetries) await retry();
+      // 不在此处触发重试；统一由 stateStream error 事件触发 retry()
     }
   }
 
   void _setupAutoReconnect() {
     _autoReconnectSub = _engine.stateStream.listen((state) {
-      if (state == EngineState.error && _currentNode != null && _retryCount < maxRetries) {
+      if (state == EngineState.error &&
+          _currentNode != null &&
+          _retryCount < maxRetries &&
+          !_isRetrying) {
         retry();
       }
     });

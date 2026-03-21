@@ -291,11 +291,17 @@ class XboardAdapter implements PanelAdapter {
         'method': methodId,
       });
       final data = _data(resp.data) as Map<String, dynamic>? ?? {};
+      // Xboard checkout 响应格式：{"data": {"type": "1", "data": "https://..."}}
+      // type=1: 第三方支付跳转链接在 data['data']
+      // type=0: 余额抵扣，无需跳转
+      final redirectUrl = data['type']?.toString() == '1'
+          ? data['data']?.toString()
+          : null;
       return PaymentResult(
         type: data['type']?.toString() ?? 'unknown',
         tradeNo: tradeNo,
         data: data,
-        redirectUrl: data['redirect_url']?.toString(),
+        redirectUrl: redirectUrl,
       );
     } on DioException catch (e) {
       throw _mapDioError(e);
@@ -670,6 +676,13 @@ class XboardAdapter implements PanelAdapter {
     DateTime? expireAt;
     if (expiredAt is int) {
       expireAt = DateTime.fromMillisecondsSinceEpoch(expiredAt * 1000);
+    } else if (expiredAt is String) {
+      final ts = int.tryParse(expiredAt);
+      if (ts != null) {
+        expireAt = DateTime.fromMillisecondsSinceEpoch(ts * 1000);
+      } else {
+        expireAt = DateTime.tryParse(expiredAt);
+      }
     }
 
     return PanelUser(
@@ -715,6 +728,7 @@ class XboardAdapter implements PanelAdapter {
       payment: data['payment']?.toString() ?? '',
       handlingFeeFixed: (data['handling_fee_fixed'] as num?)?.toInt(),
       handlingFeePercent: (data['handling_fee_percent'] as num?)?.toDouble(),
+      enable: data['enable'] == 1 || data['enable'] == true,
     );
   }
 

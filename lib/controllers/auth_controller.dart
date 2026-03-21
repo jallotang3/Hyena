@@ -38,7 +38,7 @@ class AuthController extends ChangeNotifier {
 
     switch (result) {
       case Success():
-        _authNotifier.notifyListeners();
+        _authNotifier.notifyAuthChanged();
         notifyListeners();
         return true;
       case Failure(error: final e):
@@ -68,7 +68,7 @@ class AuthController extends ChangeNotifier {
 
     switch (result) {
       case Success():
-        _authNotifier.notifyListeners();
+        _authNotifier.notifyAuthChanged();
         notifyListeners();
         return true;
       case Failure(error: final e):

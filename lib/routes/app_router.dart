@@ -13,7 +13,7 @@ import '../controllers/diag_controller.dart';
 import '../controllers/traffic_chart_controller.dart';
 import '../controllers/splash_controller.dart';
 import '../core/models/commercial/order.dart';
-import '../features/auth/auth_use_case.dart';
+import '../features/auth/auth_notifier.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
@@ -33,7 +33,7 @@ import '../features/ticket/screens/ticket_list_screen.dart';
 import '../skins/skin_manager.dart';
 
 class AppRouter {
-  static GoRouter router(AuthUseCase auth) {
+  static GoRouter router(AuthNotifier auth) {
     return GoRouter(
       initialLocation: '/splash',
       redirect: (context, state) {
@@ -105,15 +105,21 @@ class AppRouter {
         ),
         GoRoute(
           path: '/orders/:tradeNo',
-          builder: (_, state) => OrderDetailScreen(
-            tradeNo: state.pathParameters['tradeNo']!,
-          ),
+          builder: (ctx, state) {
+            final tradeNo = state.pathParameters['tradeNo']!;
+            return SkinManager.instance.pageFactory
+                    .orderDetailPage(ctx.read<OrderController>()) ??
+                OrderDetailScreen(tradeNo: tradeNo);
+          },
         ),
         GoRoute(
           path: '/payment-result',
-          builder: (_, state) => PaymentResultScreen(
-            paymentResult: state.extra! as PaymentResult,
-          ),
+          builder: (ctx, state) {
+            final pr = state.extra! as PaymentResult;
+            return SkinManager.instance.pageFactory
+                    .paymentResultPage(ctx.read<OrderController>()) ??
+                PaymentResultScreen(paymentResult: pr);
+          },
         ),
         GoRoute(
           path: '/tickets',

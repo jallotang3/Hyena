@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/auth_notifier.dart';
-import 'features/auth/auth_use_case.dart';
 import 'features/settings/locale_notifier.dart';
 import 'l10n/app_localizations.dart';
 import 'skins/skin_manager.dart';
@@ -27,7 +26,7 @@ class HyenaApp extends StatelessWidget {
             title: 'HyenaVPN',
             debugShowCheckedModeBanner: false,
             theme: tokenProvider.toMaterialTheme(),
-            routerConfig: AppRouter.router(context.read<AuthUseCase>()),
+            routerConfig: AppRouter.router(authNotifier),
             localizationsDelegates: S.localizationsDelegates,
             supportedLocales: S.supportedLocales,
             locale: localeNotifier.locale,
