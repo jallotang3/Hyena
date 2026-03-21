@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               letterSpacing: 1.5)),
                       Text(
                         ctrl.userEmail?.split('@').first.toUpperCase() ??
-                            'USER',
+                            s.homeDefaultUser,
                         style: TextStyle(
                             color: tokens.colorOnBackground,
                             fontSize: 18,
@@ -195,7 +195,7 @@ class _ConnectButton extends StatelessWidget {
       EngineState.connected => s.homeConnected,
       EngineState.connecting => s.homeConnecting,
       EngineState.disconnecting => s.homeDisconnecting,
-      EngineState.error => 'ERROR',
+      EngineState.error => s.homeErrorState,
       _ => s.homeDisconnected,
     };
 
@@ -364,7 +364,7 @@ class _NodeCard extends StatelessWidget {
                         fontSize: 10,
                         letterSpacing: 1)),
                 const SizedBox(height: 2),
-                Text(node?.name ?? 'Not selected',
+                Text(node?.name ?? S.of(context)!.notSelectedNode,
                     style: TextStyle(
                         color: tokens.colorOnSurface,
                         fontSize: 15,

@@ -2,7 +2,7 @@
 
 > 最后更新：2026-03-20
 
-## 当前状态：P4 Controller/View 分离 + 皮肤系统 已完成
+## 当前状态：P5 CI/CD 模板化构建 进行中
 
 ---
 
@@ -295,6 +295,19 @@ lib/
   - `TrafficChartScreen`：使用 `TrafficChartController`（fetchTrafficLog / records）
 - ✅ Router 集成 SkinPageFactory（先查皮肤工厂再用默认页面）
 - ✅ Controller Provider 注册（`main.dart` MultiProvider 注入 13 个 ScreenController）
+
+### P4-4 ✅ 多语言（i18n）完善
+- ✅ 全局硬编码文案扫描 — 所有 `screens/*.dart` 文件零硬编码 UI 文案
+- ✅ `app_en.arb` / `app_zh_CN.arb` 完整翻译覆盖（约 180+ Key）
+- ✅ 新增 Key：`appName`, `splashTagline`, `homeDefaultUser`, `homeErrorState`, `notSelectedNode`, `exportFailed`, `langFollowSystem`, `emailValidationError`, `codeValidationError`, `emailCodeSent`, `invalidEmail`, `minChars`, `sendCode`, `resetCodeSent`, `resetPasswordSuccess` 等
+
+### P4-5 ✅ 界面设计规范文档
+- ✅ `docs/skin-contract.md` v1.1 — 更新 ThemeTokens 规范（完整 Token 表，含默认值和语义说明）
+- ✅ 补充皮肤开发指南：注册机制（5.5）、测试方法（5.6）、皮肤包 Checklist（5.7）
+- ✅ 新增 ThemeTokens → MaterialTheme 映射表（§7）
+
+### P4-6 ✅ 皮肤合约版本校验
+- ✅ `SkinManager.load()` 解析合约主版本号，不兼容时自动降级 default 并记录日志
 
 ---
 

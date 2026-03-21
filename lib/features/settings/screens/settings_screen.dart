@@ -8,15 +8,14 @@ import '../../../l10n/app_localizations.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  static const _locales = [
-    _LocaleOption(code: '', label: '跟随系统'),
-    _LocaleOption(code: 'en', country: null, label: 'English'),
-    _LocaleOption(code: 'zh', country: 'CN', label: '简体中文'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final s = S.of(context)!;
+    final locales = [
+      _LocaleOption(code: '', label: s.langFollowSystem),
+      _LocaleOption(code: 'en', country: null, label: s.langEn),
+      _LocaleOption(code: 'zh', country: 'CN', label: s.langZhCN),
+    ];
     return Scaffold(
       appBar: AppBar(title: Text(s.settings)),
       body: Consumer<SettingsController>(
@@ -34,7 +33,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const Divider(),
               _SectionHeader(label: s.language),
-              ..._locales.map((loc) {
+              ...locales.map((loc) {
                 final selected = currentCode == loc.code;
                 return ListTile(
                   title: Text(loc.label),

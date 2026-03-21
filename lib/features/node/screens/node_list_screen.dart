@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../../controllers/node_controller.dart';
 import '../../../core/models/proxy_node.dart';
-import '../../../features/node/node_notifier.dart';
 import '../../../l10n/app_localizations.dart';
 
 class NodeListScreen extends StatefulWidget {

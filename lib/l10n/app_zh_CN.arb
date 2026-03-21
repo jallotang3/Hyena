@@ -241,5 +241,19 @@
 
   "settingsConnection": "连接",
   "settingsAutoConnectDesc": "启动时自动连接上次使用的节点",
-  "settingsTools": "工具"
+  "settingsTools": "工具",
+
+  "emailValidationError": "请先输入有效的邮箱地址",
+  "codeValidationError": "请输入验证码",
+  "emailCodeSent": "验证码已发送！",
+  "invalidEmail": "邮箱格式不正确",
+  "minChars": "至少6个字符",
+  "sendCode": "发送",
+  "resetCodeSent": "重置验证码已发送！",
+  "resetPasswordSuccess": "密码重置成功！请重新登录。",
+  "notSelectedNode": "未选择",
+  "homeDefaultUser": "用户",
+  "homeErrorState": "错误",
+  "exportFailed": "导出失败: {error}",
+  "langFollowSystem": "跟随系统"
 }

@@ -1,6 +1,6 @@
 # Hyena · 界面设计规范（Skin Contract）
 
-> **文档版本**: v1.0 | **状态**: 草稿 | **更新时间**: 2026-03
+> **文档版本**: v1.1 | **状态**: 草稿 | **更新时间**: 2026-03-20
 >
 > 本文档定义了 Hyena 所有页面的 Controller API 契约。
 > 皮肤开发者 / UI 设计者只需依赖本文档中列出的**状态属性**和**操作方法**，
@@ -313,27 +313,66 @@ abstract class SkinPageFactory {
 
 ### 4.1 当前可用 Token
 
-| 分类 | Token | 类型 | 说明 |
-|------|-------|------|------|
-| 颜色 | `primaryColor` | `Color` | 主色调 |
-| 颜色 | `secondaryColor` | `Color` | 辅助色 |
-| 颜色 | `backgroundColor` | `Color` | 页面背景色 |
-| 颜色 | `surfaceColor` | `Color` | 卡片/表面色 |
-| 颜色 | `errorColor` | `Color` | 错误色 |
-| 颜色 | `onPrimaryColor` | `Color` | 主色上的文字/图标色 |
-| 圆角 | `borderRadius` | `double` | 通用圆角半径 |
-| 间距 | `spacingXs` | `double` | 极小间距 (4) |
-| 间距 | `spacingSm` | `double` | 小间距 (8) |
-| 间距 | `spacingMd` | `double` | 中间距 (16) |
-| 间距 | `spacingLg` | `double` | 大间距 (24) |
-| 间距 | `spacingXl` | `double` | 极大间距 (32) |
-| 字体 | `fontFamily` | `String?` | 全局字体 |
-| 字体 | `fontSizeCaption` | `double` | 标注文字大小 |
-| 字体 | `fontWeightNormal` | `FontWeight` | 正常字重 |
-| 字体 | `fontWeightBold` | `FontWeight` | 粗体字重 |
-| 按钮 | `buttonHeight` | `double` | 按钮高度 |
-| 按钮 | `buttonPadding` | `EdgeInsets` | 按钮内边距 |
-| 按钮 | `connectButtonSize` | `double` | 连接按钮尺寸 |
+#### 颜色（Color）— 必须提供
+
+| Token | 类型 | 默认值（Default Skin） | 说明 |
+|-------|------|----------------------|------|
+| `colorPrimary` | `Color` | `#22D3EE` (Cyan) | 主色调 — 按钮、选中态、高亮 |
+| `colorBackground` | `Color` | `#0A0F1C` | 页面背景色 |
+| `colorSurface` | `Color` | `#111827` | 卡片/容器表面色 |
+| `colorSurfaceVariant` | `Color` | `#1E293B` | 输入框、分割线等次级表面色 |
+| `colorOnBackground` | `Color` | `#F8FAFC` | 背景上的主要文字色 |
+| `colorOnSurface` | `Color` | `#E2E8F0` | 表面上的文字色 |
+| `colorOnPrimary` | `Color` | `#0A0F1C` | 主色上的文字/图标色 |
+| `colorMuted` | `Color` | `#475569` | 次要文字、占位符、禁用态色 |
+| `colorError` | `Color` | `#F87171` | 错误、警告色 |
+| `colorSuccess` | `Color` | `#34D399` | 成功、已连接色 |
+
+#### 圆角（Radius）— 必须提供
+
+| Token | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| `radiusSmall` | `double` | `8.0` | 输入框、标签、小按钮圆角 |
+| `radiusMedium` | `double` | `12.0` | 卡片、容器圆角 |
+| `radiusLarge` | `double` | `20.0` | 弹窗、大圆角容器 |
+
+#### 排版（Typography）— 可选，有默认值
+
+| Token | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| `fontFamily` | `String?` | `null`（系统默认） | 全局字体族 |
+| `fontSizeCaption` | `double` | `11.0` | 标注/标签文字 |
+| `fontSizeBody` | `double` | `14.0` | 正文文字 |
+| `fontSizeTitle` | `double` | `18.0` | 页面标题 |
+| `fontSizeHeadline` | `double` | `24.0` | 大标题 |
+| `fontWeightNormal` | `FontWeight` | `w400` | 正常字重 |
+| `fontWeightBold` | `FontWeight` | `w700` | 粗体字重 |
+
+#### 间距（Spacing）— 可选，有默认值
+
+| Token | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| `spacingXs` | `double` | `4.0` | 极小间距（元素内部间隙） |
+| `spacingSm` | `double` | `8.0` | 小间距 |
+| `spacingMd` | `double` | `16.0` | 中间距（标准 padding） |
+| `spacingLg` | `double` | `24.0` | 大间距（区块间距） |
+| `spacingXl` | `double` | `32.0` | 极大间距（页面区域分隔） |
+
+#### 按钮（Button）— 可选，有默认值
+
+| Token | 类型 | 默认值 | 说明 |
+|-------|------|--------|------|
+| `buttonHeight` | `double` | `48.0` | 标准按钮高度 |
+| `buttonBorderRadius` | `double?` | `null`（使用 `radiusMedium`） | 按钮专用圆角，`null` 时回退到 `radiusMedium` |
+| `buttonPadding` | `EdgeInsets` | `horizontal: 24, vertical: 12` | 按钮内边距 |
+| `connectButtonSize` | `double` | `180.0` | 首页连接按钮直径 |
+| `connectButtonBorderWidth` | `double` | `2.5` | 连接按钮边框宽度 |
+
+#### 计算属性
+
+| Token | 说明 |
+|-------|------|
+| `resolvedButtonRadius` | 若 `buttonBorderRadius != null` 则使用它，否则回退 `radiusMedium` |
 
 ### 4.2 使用示例
 
@@ -399,7 +438,8 @@ class BrandXPageFactory extends DefaultPageFactory {
 1. 只通过 Controller 参数获取状态和调用操作。
 2. 使用 `ThemeTokenProvider.tokensOf(context)` 获取样式。
 3. 通过 `AnimatedBuilder` 或 `ListenableBuilder` 监听 Controller 变化。
-4. 禁止 `context.read<UseCase>()` 等越层调用。
+4. 通过 `S.of(context)!` 获取国际化文案，支持多语言。
+5. 禁止 `context.read<UseCase>()` 等越层调用。
 
 ```dart
 class BrandXHomePage extends StatelessWidget {
@@ -409,18 +449,30 @@ class BrandXHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = ThemeTokenProvider.tokensOf(context);
+    final s = S.of(context)!;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
+        final isConnected =
+            controller.connectionState == EngineState.connected;
         return Scaffold(
+          backgroundColor: tokens.colorBackground,
           body: Column(children: [
-            Text('状态: ${controller.connectionState}'),
+            Text(
+              isConnected ? s.homeConnected : s.homeDisconnected,
+              style: TextStyle(
+                color: tokens.colorOnBackground,
+                fontSize: tokens.fontSizeTitle,
+              ),
+            ),
+            SizedBox(height: tokens.spacingMd),
             ElevatedButton(
-              onPressed: controller.connectionState == EngineState.connected
+              onPressed: isConnected
                   ? controller.disconnect
                   : controller.connect,
-              child: Text(controller.connectionState == EngineState.connected
-                  ? '断开' : '连接'),
+              child: Text(isConnected
+                  ? s.homeDisconnectButton
+                  : s.homeConnectButton),
             ),
           ]),
         );
@@ -429,6 +481,45 @@ class BrandXHomePage extends StatelessWidget {
   }
 }
 ```
+
+### 5.5 注册新皮肤到应用
+
+在 `SkinManager._resolveSkin()` 中按 skinId 注册：
+
+```dart
+Future<SkinContract> _resolveSkin(String skinId) async {
+  return switch (skinId) {
+    'default' => _DefaultSkinContract(),
+    'brand_x' => BrandXSkinContract(),  // 新增
+    _ => throw ArgumentError('Unknown skinId: $skinId'),
+  };
+}
+```
+
+应用启动时通过编译常量指定皮肤：
+
+```bash
+flutter run --dart-define=SKIN_ID=brand_x
+```
+
+### 5.6 测试皮肤
+
+1. **视觉测试**：使用 `--dart-define=SKIN_ID=brand_x` 启动应用，逐页检查样式。
+2. **Token 覆盖测试**：确认自定义颜色、圆角、字体在各页面生效。
+3. **页面覆盖测试**：确认 `SkinPageFactory` 覆盖的页面正常加载，未覆盖的页面使用默认实现。
+4. **合约版本测试**：将 `contractVersion` 设为不兼容版本（如 `'2.0.0'`），确认应用降级到 default 并记录日志。
+
+### 5.7 皮肤包 Checklist
+
+- [ ] 实现 `SkinContract` 接口（`contractVersion` / `skinId` / `themeTokens` / `pageFactory`）
+- [ ] 提供 10 个必须颜色 Token（主色 / 背景 / 表面 / 文字 / 错误 / 成功）
+- [ ] 提供 3 个圆角 Token
+- [ ] `contractVersion` 主版本号与当前支持版本一致（当前为 `1`）
+- [ ] 自定义页面只通过 Controller API 交互
+- [ ] 自定义页面使用 `ThemeTokenProvider.tokensOf(context)` 获取样式
+- [ ] 自定义页面使用 `S.of(context)!` 获取国际化文案
+- [ ] 在 `SkinManager._resolveSkin()` 中注册 skinId
+- [ ] 通过 `flutter run --dart-define=SKIN_ID=xxx` 验证加载
 
 ---
 
@@ -442,3 +533,27 @@ class BrandXHomePage extends StatelessWidget {
 | 删除已有属性/方法 | **破坏性变更**，需升级 `contractVersion` 主版本号 |
 | 新增 ThemeToken | 兼容变更，提供默认值 |
 | 新增 SkinPageFactory 方法 | 兼容变更，默认返回 `null` |
+
+---
+
+## 7. ThemeTokens → MaterialTheme 映射
+
+`ThemeTokenProvider.toMaterialTheme()` 自动将 Token 映射为 Flutter `ThemeData`：
+
+| Token | MaterialTheme 属性 |
+|-------|-------------------|
+| `colorPrimary` | `ColorScheme.primary` / `ElevatedButton.backgroundColor` |
+| `colorBackground` | `scaffoldBackgroundColor` / `AppBarTheme.backgroundColor` |
+| `colorSurface` | `ColorScheme.surface` / `CardTheme.color` |
+| `colorSurfaceVariant` | `ColorScheme.surfaceContainerHighest` / `InputDecoration.fillColor` / `DividerTheme.color` |
+| `colorOnPrimary` | `ColorScheme.onPrimary` / `ElevatedButton.foregroundColor` |
+| `colorOnSurface` | `ColorScheme.onSurface` |
+| `colorError` | `ColorScheme.error` |
+| `fontFamily` | `ThemeData.fontFamily` |
+| `radiusMedium` | `CardTheme.borderRadius` |
+| `radiusSmall` | `InputDecoration.borderRadius` |
+| `buttonHeight` | 所有按钮 `minimumSize.height` |
+| `buttonPadding` | 所有按钮 `padding` |
+| `resolvedButtonRadius` | 所有按钮 `borderRadius` |
+
+皮肤开发者通常无需关心此映射，但可通过此表了解 Token 对标准 Material 组件的影响范围。

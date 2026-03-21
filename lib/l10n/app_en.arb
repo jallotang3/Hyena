@@ -260,5 +260,24 @@
 
   "settingsConnection": "Connection",
   "settingsAutoConnectDesc": "Auto connect last used node on startup",
-  "settingsTools": "Tools"
+  "settingsTools": "Tools",
+
+  "emailValidationError": "Enter a valid email first",
+  "codeValidationError": "Enter code",
+  "emailCodeSent": "Verification code sent!",
+  "invalidEmail": "Invalid email",
+  "minChars": "Min 6 characters",
+  "sendCode": "SEND",
+  "resetCodeSent": "Reset code sent!",
+  "resetPasswordSuccess": "Password reset! Please sign in.",
+  "notSelectedNode": "Not selected",
+  "homeDefaultUser": "USER",
+  "homeErrorState": "ERROR",
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "langFollowSystem": "Follow System"
 }

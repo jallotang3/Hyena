@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _sendCode() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = 'Enter a valid email first');
+      setState(() => _error = S.of(context)!.emailValidationError);
       return;
     }
     setState(() => _sendingCode = true);
@@ -47,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
     if (ok) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Verification code sent!')));
+          .showSnackBar(SnackBar(content: Text(S.of(context)!.emailCodeSent)));
     }
   }
 
@@ -75,6 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = ThemeTokenProvider.tokensOf(context);
+    final s = S.of(context)!;
 
     return Scaffold(
       backgroundColor: tokens.colorBackground,
@@ -92,14 +94,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('CREATE ACCOUNT',
+                Text(s.registerTitle,
                     style: TextStyle(
                         color: tokens.colorOnBackground,
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 2)),
                 const SizedBox(height: 4),
-                Text('Join today',
+                Text(s.registerSubtitle,
                     style: TextStyle(color: tokens.colorMuted, fontSize: 14)),
                 const SizedBox(height: 32),
 
@@ -114,13 +116,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   autocorrect: false,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'Email address',
+                    hintText: s.registerEmailHint,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon:
                         Icon(Icons.mail_outline, color: tokens.colorMuted),
                   ),
                   validator: (v) => (v == null || !v.contains('@'))
-                      ? 'Invalid email'
+                      ? s.invalidEmail
                       : null,
                 ),
                 const SizedBox(height: 12),
@@ -132,13 +134,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _codeCtrl,
                         style: TextStyle(color: tokens.colorOnSurface),
                         decoration: InputDecoration(
-                          hintText: 'Verification code',
+                          hintText: s.registerEmailCodeHint,
                           hintStyle: TextStyle(color: tokens.colorMuted),
                           prefixIcon:
                               Icon(Icons.pin_outlined, color: tokens.colorMuted),
                         ),
                         validator: (v) => (v == null || v.isEmpty)
-                            ? 'Enter code'
+                            ? s.codeValidationError
                             : null,
                       ),
                     ),
@@ -158,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: tokens.colorPrimary))
-                            : const Text('SEND'),
+                            : Text(s.sendCode),
                       ),
                     ),
                   ],
@@ -170,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscure,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'Password',
+                    hintText: s.registerPasswordHint,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon:
                         Icon(Icons.lock_outline, color: tokens.colorMuted),
@@ -184,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   validator: (v) =>
-                      (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                      (v == null || v.length < 6) ? s.minChars : null,
                 ),
                 const SizedBox(height: 12),
 
@@ -192,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _inviteCtrl,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'Invite code (optional)',
+                    hintText: s.registerInviteCodeHint,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon:
                         Icon(Icons.card_giftcard, color: tokens.colorMuted),
@@ -211,8 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: tokens.colorOnPrimary))
-                        : const Text('REGISTER',
-                            style: TextStyle(
+                        : Text(s.registerButton,
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w700, letterSpacing: 1)),
                   ),
                 ),
@@ -221,12 +223,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Already have an account?',
+                    Text(s.registerHaveAccount,
                         style:
                             TextStyle(color: tokens.colorMuted, fontSize: 13)),
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: Text('Sign in',
+                      child: Text(s.registerLoginLink,
                           style: TextStyle(
                               color: tokens.colorPrimary,
                               fontSize: 13,

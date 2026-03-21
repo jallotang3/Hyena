@@ -45,7 +45,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
+          SnackBar(content: Text(S.of(context)!.exportFailed(e.toString()))),
         );
       }
     }

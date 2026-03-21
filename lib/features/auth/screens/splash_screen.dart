@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/splash_controller.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -71,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 24),
               Text(
-                'HYENA VPN',
+                S.of(context)?.appName ?? 'HYENA VPN',
                 style: TextStyle(
                   color: tokens.colorOnBackground,
                   fontSize: 22,
@@ -81,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Fast. Private. Yours.',
+                S.of(context)?.splashTagline ?? '',
                 style: TextStyle(
                   color: tokens.colorMuted,
                   fontSize: 13,

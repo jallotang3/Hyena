@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../skins/theme_token_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _sendCode() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = 'Enter a valid email first');
+      setState(() => _error = S.of(context)!.emailValidationError);
       return;
     }
     setState(() {
@@ -49,7 +50,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reset code sent!')));
+          SnackBar(content: Text(S.of(context)!.resetCodeSent)));
     }
   }
 
@@ -71,7 +72,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _error = ctrl.error;
     });
     if (ok) {
-      setState(() => _success = 'Password reset! Please sign in.');
+      setState(() => _success = S.of(context)!.resetPasswordSuccess);
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) context.go('/login');
       });
@@ -81,6 +82,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = ThemeTokenProvider.tokensOf(context);
+    final s = S.of(context)!;
 
     return Scaffold(
       backgroundColor: tokens.colorBackground,
@@ -98,14 +100,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('RESET PASSWORD',
+                Text(s.forgotPasswordTitle,
                     style: TextStyle(
                         color: tokens.colorOnBackground,
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 2)),
                 const SizedBox(height: 4),
-                Text('Enter your email to receive a reset code',
+                Text(s.forgotPasswordSubtitle,
                     style: TextStyle(color: tokens.colorMuted, fontSize: 13)),
                 const SizedBox(height: 32),
 
@@ -142,12 +144,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   autocorrect: false,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'Email address',
+                    hintText: s.loginEmailHint,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon: Icon(Icons.mail_outline, color: tokens.colorMuted),
                   ),
                   validator: (v) =>
-                      (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                      (v == null || !v.contains('@')) ? s.invalidEmail : null,
                 ),
                 const SizedBox(height: 12),
 
@@ -158,12 +160,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         controller: _codeCtrl,
                         style: TextStyle(color: tokens.colorOnSurface),
                         decoration: InputDecoration(
-                          hintText: 'Reset code',
+                          hintText: s.registerEmailCodeHint,
                           hintStyle: TextStyle(color: tokens.colorMuted),
                           prefixIcon: Icon(Icons.pin_outlined, color: tokens.colorMuted),
                         ),
                         validator: (v) =>
-                            (v == null || v.isEmpty) ? 'Enter code' : null,
+                            (v == null || v.isEmpty) ? s.codeValidationError : null,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -181,7 +183,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: tokens.colorPrimary))
-                            : const Text('SEND'),
+                            : Text(s.sendCode),
                       ),
                     ),
                   ],
@@ -193,7 +195,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   obscureText: _obscure,
                   style: TextStyle(color: tokens.colorOnSurface),
                   decoration: InputDecoration(
-                    hintText: 'New password',
+                    hintText: s.newPassword,
                     hintStyle: TextStyle(color: tokens.colorMuted),
                     prefixIcon: Icon(Icons.lock_outline, color: tokens.colorMuted),
                     suffixIcon: IconButton(
@@ -206,7 +208,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
                   validator: (v) =>
-                      (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                      (v == null || v.length < 6) ? s.minChars : null,
                 ),
                 const SizedBox(height: 28),
 
@@ -221,8 +223,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: tokens.colorOnPrimary))
-                        : const Text('RESET PASSWORD',
-                            style: TextStyle(
+                        : Text(s.forgotPasswordButton,
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w700, letterSpacing: 1)),
                   ),
                 ),

@@ -10,6 +10,8 @@ class SkinManager {
   SkinManager._();
   static final SkinManager instance = SkinManager._();
 
+  static const String _supportedContractVersion = '1';
+
   ThemeTokens _tokens = kDefaultThemeTokens;
   SkinPageFactory _pageFactory = DefaultPageFactory();
   String _activeSkinId = 'default';
@@ -21,16 +23,31 @@ class SkinManager {
   Future<void> load(String skinId) async {
     try {
       final contract = await _resolveSkin(skinId);
+      final major = contract.contractVersion.split('.').first;
+      if (major != _supportedContractVersion) {
+        AppLogger.w(
+          '皮肤 $skinId 合约版本 ${contract.contractVersion} 不兼容'
+          '（需要 $_supportedContractVersion.x），降级使用 default',
+          tag: LogTag.skin,
+        );
+        _fallbackToDefault();
+        return;
+      }
       _tokens = contract.themeTokens;
       _pageFactory = contract.pageFactory;
       _activeSkinId = contract.skinId;
-      AppLogger.i('皮肤加载成功: $skinId', tag: LogTag.skin);
+      AppLogger.i('皮肤加载成功: $skinId (v${contract.contractVersion})',
+          tag: LogTag.skin);
     } catch (e) {
       AppLogger.w('皮肤 $skinId 加载失败，回退到 default: $e', tag: LogTag.skin);
-      _tokens = kDefaultThemeTokens;
-      _pageFactory = DefaultPageFactory();
-      _activeSkinId = 'default';
+      _fallbackToDefault();
     }
+  }
+
+  void _fallbackToDefault() {
+    _tokens = kDefaultThemeTokens;
+    _pageFactory = DefaultPageFactory();
+    _activeSkinId = 'default';
   }
 
   Future<SkinContract> _resolveSkin(String skinId) async {
