@@ -1,0 +1,222 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform'
+        required: true
+        type: choice
+        options:
+          - android
+          - windows
+          - both
+      profile:
+        description: 'Client profile file (from templates/)'
+        required: false
+        default: 'default.yaml'
+      build_type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - apk
+          - appbundle
+          - exe
+        default: 'apk'
+
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      profile:
+        required: false
+        type: string
+        default: 'default.yaml'
+      build_type:
+        required: false
+        type: string
+        default: 'apk'
+
+env:
+  FLUTTER_CHANNEL: stable
+
+jobs:
+  # ── Read client profile ──
+  read-profile:
+    name: Read Profile
+    runs-on: ubuntu-latest
+    outputs:
+      panel_api_base: ${{ steps.parse.outputs.panel_api_base }}
+      panel_type: ${{ steps.parse.outputs.panel_type }}
+      site_id: ${{ steps.parse.outputs.site_id }}
+      site_name: ${{ steps.parse.outputs.site_name }}
+      skin_id: ${{ steps.parse.outputs.skin_id }}
+      default_locale: ${{ steps.parse.outputs.default_locale }}
+      app_name: ${{ steps.parse.outputs.app_name }}
+      package_name: ${{ steps.parse.outputs.package_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse profile
+        id: parse
+        run: |
+          PROFILE="templates/${{ inputs.profile || 'default.yaml' }}"
+          if [ ! -f "$PROFILE" ]; then
+            echo "Profile not found: $PROFILE, using defaults"
+            echo "panel_api_base=https://panel.example.com" >> "$GITHUB_OUTPUT"
+            echo "panel_type=xboard" >> "$GITHUB_OUTPUT"
+            echo "site_id=default" >> "$GITHUB_OUTPUT"
+            echo "site_name=HyenaVPN" >> "$GITHUB_OUTPUT"
+            echo "skin_id=default" >> "$GITHUB_OUTPUT"
+            echo "default_locale=en" >> "$GITHUB_OUTPUT"
+            echo "app_name=HyenaVPN" >> "$GITHUB_OUTPUT"
+            echo "package_name=com.hyena.vpn" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          get_val() {
+            grep "^$1:" "$PROFILE" | sed "s/^$1:[[:space:]]*//" | tr -d '"' | tr -d "'"
+          }
+
+          echo "panel_api_base=$(get_val panel_api_base)" >> "$GITHUB_OUTPUT"
+          echo "panel_type=$(get_val panel_type)" >> "$GITHUB_OUTPUT"
+          echo "site_id=$(get_val site_id)" >> "$GITHUB_OUTPUT"
+          echo "site_name=$(get_val site_name)" >> "$GITHUB_OUTPUT"
+          echo "skin_id=$(get_val skin_id)" >> "$GITHUB_OUTPUT"
+          echo "default_locale=$(get_val default_locale)" >> "$GITHUB_OUTPUT"
+          echo "app_name=$(get_val app_name)" >> "$GITHUB_OUTPUT"
+          echo "package_name=$(get_val package_name)" >> "$GITHUB_OUTPUT"
+
+  # ── Android Build ──
+  build-android:
+    name: Build Android
+    needs: read-profile
+    if: inputs.platform == 'android' || inputs.platform == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/**/build.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate l10n
+        run: flutter gen-l10n
+
+      - name: Decode keystore
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+
+      - name: Build APK
+        if: inputs.build_type == 'apk' || inputs.build_type == ''
+        run: |
+          flutter build apk --release \
+            --dart-define=PANEL_API_BASE=${{ needs.read-profile.outputs.panel_api_base }} \
+            --dart-define=PANEL_TYPE=${{ needs.read-profile.outputs.panel_type }} \
+            --dart-define=SITE_ID=${{ needs.read-profile.outputs.site_id }} \
+            --dart-define=SITE_NAME=${{ needs.read-profile.outputs.site_name }} \
+            --dart-define=SKIN_ID=${{ needs.read-profile.outputs.skin_id }} \
+            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }}
+
+      - name: Build App Bundle
+        if: inputs.build_type == 'appbundle'
+        run: |
+          flutter build appbundle --release \
+            --dart-define=PANEL_API_BASE=${{ needs.read-profile.outputs.panel_api_base }} \
+            --dart-define=PANEL_TYPE=${{ needs.read-profile.outputs.panel_type }} \
+            --dart-define=SITE_ID=${{ needs.read-profile.outputs.site_id }} \
+            --dart-define=SITE_NAME=${{ needs.read-profile.outputs.site_name }} \
+            --dart-define=SKIN_ID=${{ needs.read-profile.outputs.skin_id }} \
+            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ needs.read-profile.outputs.site_id }}-${{ github.sha }}
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/bundle/release/*.aab
+          retention-days: 14
+
+  # ── Windows Build ──
+  build-windows:
+    name: Build Windows
+    needs: read-profile
+    if: inputs.platform == 'windows' || inputs.platform == 'both'
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\Pub\Cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate l10n
+        run: flutter gen-l10n
+
+      - name: Build Windows EXE
+        run: |
+          flutter build windows --release `
+            --dart-define=PANEL_API_BASE=${{ needs.read-profile.outputs.panel_api_base }} `
+            --dart-define=PANEL_TYPE=${{ needs.read-profile.outputs.panel_type }} `
+            --dart-define=SITE_ID=${{ needs.read-profile.outputs.site_id }} `
+            --dart-define=SITE_NAME=${{ needs.read-profile.outputs.site_name }} `
+            --dart-define=SKIN_ID=${{ needs.read-profile.outputs.skin_id }} `
+            --dart-define=DEFAULT_LOCALE=${{ needs.read-profile.outputs.default_locale }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ needs.read-profile.outputs.site_id }}-${{ github.sha }}
+          path: build/windows/x64/runner/Release/
+          retention-days: 14

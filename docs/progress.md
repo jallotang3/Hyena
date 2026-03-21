@@ -2,7 +2,7 @@
 
 > 最后更新：2026-03-20
 
-## 当前状态：P5 CI/CD 模板化构建 进行中
+## 当前状态：V1 主交付（P1~P5）已完成
 
 ---
 
@@ -308,6 +308,47 @@ lib/
 
 ### P4-6 ✅ 皮肤合约版本校验
 - ✅ `SkinManager.load()` 解析合约主版本号，不兼容时自动降级 default 并记录日志
+
+---
+
+## Phase 5 · CI/CD 模板化构建（已完成）
+
+### P5-1 ✅ CI 工作流（ci.yml）
+- PR / push to main 自动触发
+- `flutter pub get` → `flutter gen-l10n` → `dart format --set-exit-if-changed` → `flutter analyze --fatal-infos` → `flutter test --coverage`
+- 并发控制（`concurrency` 同 ref 自动取消旧运行）
+
+### P5-2 ✅ 构建工作流（build.yml）
+- 支持 `workflow_dispatch`（手动触发）和 `workflow_call`（被其他工作流调用）
+- **Android 构建**：
+  - Java 17 + Flutter stable
+  - pub cache + Gradle 双层缓存
+  - 支持 APK 和 App Bundle 两种输出
+  - `--dart-define` 品牌参数注入
+  - Keystore base64 秘钥解码（GitHub Secrets）
+  - 构建产物上传（14 天保留）
+- **Windows 构建**：
+  - `windows-latest` runner
+  - pub cache 缓存
+  - `--dart-define` 品牌参数注入
+  - Release 目录上传
+
+### P5-3 ✅ 品牌参数注入
+- `templates/default.yaml` 默认配置模板
+- `read-profile` job 解析 YAML → GitHub Actions outputs
+- 支持字段：`panel_api_base` / `panel_type` / `site_id` / `site_name` / `skin_id` / `default_locale` / `app_name` / `package_name`
+
+### P5-4 ✅ Android 签名配置
+- `android/app/build.gradle.kts` 支持 `key.properties` 签名配置
+- Release 构建开启 R8 混淆（`isMinifyEnabled = true`）和资源压缩（`isShrinkResources = true`）
+- 无 keystore 时自动降级使用 debug 签名
+
+### P5-5 ✅ 发布工作流（release.yml）
+- Tag `v*` 推送自动触发
+- 调用 `build.yml` 构建 Android + Windows
+- 自动生成 Release Notes（基于 Git commit 历史）
+- Windows 产物自动打包为 ZIP
+- 支持 `-rc` / `-beta` / `-alpha` 预发布标记
 
 ---
 

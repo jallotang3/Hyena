@@ -21,6 +21,7 @@ lib/l10n/app_localizations/
 *.p12
 *.jks
 android/key.properties
+android/app/upload-keystore.jks
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 

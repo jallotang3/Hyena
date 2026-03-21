@@ -1,0 +1,21 @@
+# Hyena Client Profile — Default
+#
+# Usage:
+#   flutter run --dart-define-from-file=... (or via CI build.yml)
+#
+# All fields below are injected as compile-time constants via --dart-define.
+# Create a copy of this file for each brand deployment.
+
+# ── Panel Configuration ──
+panel_api_base: https://panel.example.com
+panel_type: xboard
+site_id: default
+site_name: HyenaVPN
+
+# ── UI Configuration ──
+skin_id: default
+default_locale: en
+
+# ── App Identity (used by CI for renaming) ──
+app_name: HyenaVPN
+package_name: com.hyena.vpn

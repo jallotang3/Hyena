@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_CHANNEL: stable
+
+jobs:
+  # ── Build all platforms ──
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      platform: both
+      build_type: apk
+    secrets: inherit
+
+  # ── Create GitHub Release ──
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: android-*
+          path: release-artifacts/android/
+          merge-multiple: true
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: windows-*
+          path: release-artifacts/windows/
+          merge-multiple: true
+
+      - name: Package Windows build
+        run: |
+          cd release-artifacts/windows
+          zip -r ../../hyena-windows-${{ github.ref_name }}.zip .
+          cd ../..
+
+      - name: Generate Release Notes
+        id: notes
+        run: |
+          TAG=${{ github.ref_name }}
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --oneline --no-merges | head -50)
+          else
+            COMMITS=$(git log --oneline --no-merges "${PREV_TAG}..${TAG}")
+          fi
+
+          {
+            echo "notes<<RELEASE_EOF"
+            echo "## What's Changed"
+            echo ""
+            echo "$COMMITS" | sed 's/^/- /'
+            echo ""
+            echo "---"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            echo "RELEASE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          files: |
+            release-artifacts/android/**/*.apk
+            hyena-windows-${{ github.ref_name }}.zip
