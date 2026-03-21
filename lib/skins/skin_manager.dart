@@ -4,6 +4,8 @@ import 'skin_page_factory.dart';
 import 'theme_token_provider.dart';
 import 'default/theme_tokens.dart';
 import 'default/default_page_factory.dart';
+import 'brand_x/theme_tokens.dart';
+import 'brand_x/brand_x_page_factory.dart';
 
 /// 皮肤管理器 — 按 skinId 加载皮肤包，加载失败自动回退 default
 class SkinManager {
@@ -53,6 +55,7 @@ class SkinManager {
   Future<SkinContract> _resolveSkin(String skinId) async {
     return switch (skinId) {
       'default' => _DefaultSkinContract(),
+      'brand_x' => _BrandXSkinContract(),
       _ => throw ArgumentError('Unknown skinId: $skinId'),
     };
   }
@@ -67,4 +70,15 @@ class _DefaultSkinContract implements SkinContract {
   ThemeTokens get themeTokens => kDefaultThemeTokens;
   @override
   SkinPageFactory get pageFactory => DefaultPageFactory();
+}
+
+class _BrandXSkinContract implements SkinContract {
+  @override
+  String get contractVersion => '1.0.0';
+  @override
+  String get skinId => 'brand_x';
+  @override
+  ThemeTokens get themeTokens => kBrandXThemeTokens;
+  @override
+  SkinPageFactory get pageFactory => BrandXPageFactory();
 }

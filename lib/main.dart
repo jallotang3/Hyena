@@ -8,6 +8,7 @@ import 'infrastructure/storage/secure_storage.dart';
 import 'infrastructure/logging/app_logger.dart';
 import 'adapters/panel/registry.dart';
 import 'adapters/panel/xboard/xboard_adapter.dart';
+import 'adapters/panel/v2board/v2board_adapter.dart';
 import 'adapters/engine/registry.dart';
 import 'adapters/engine/singbox/singbox_driver.dart';
 import 'features/auth/auth_notifier.dart';
@@ -57,6 +58,7 @@ Future<void> main() async {
 
   final adapterRegistry = PanelAdapterRegistry.instance;
   adapterRegistry.register(XboardAdapter());
+  adapterRegistry.register(V2boardAdapter());
 
   final engineRegistry = EngineRegistry.instance;
   final singboxDriver = SingboxDriver();
