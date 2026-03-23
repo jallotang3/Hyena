@@ -15,6 +15,9 @@ import 'mobile/pages/home_page.dart';
 import 'mobile/pages/node_list_page.dart';
 import 'mobile/pages/settings_page.dart';
 import 'mobile/pages/profile_page.dart';
+import 'mobile/pages/store_page.dart';
+import 'mobile/pages/order_center_page.dart';
+import 'mobile/pages/ticket_list_page.dart';
 
 /// 平台类型枚举
 enum PlatformType {
@@ -159,8 +162,8 @@ class MobilePageFactory extends PlatformPageFactory {
 
   @override
   Widget buildStorePage(StoreController controller) {
-    // TODO: 实现移动端商店页
-    return _placeholder('Mobile Store Page');
+    // 使用实际的移动端商店页实现
+    return MobileStorePage(controller: controller);
   }
 
   @override
@@ -171,8 +174,8 @@ class MobilePageFactory extends PlatformPageFactory {
 
   @override
   Widget buildOrderCenterPage(OrderController controller) {
-    // TODO: 实现移动端订单中心页
-    return _placeholder('Mobile Order Center Page');
+    // 使用实际的移动端订单中心页实现
+    return MobileOrderCenterPage(controller: controller);
   }
 
   @override
@@ -183,8 +186,8 @@ class MobilePageFactory extends PlatformPageFactory {
 
   @override
   Widget buildTicketListPage(TicketController controller) {
-    // TODO: 实现移动端工单列表页
-    return _placeholder('Mobile Ticket List Page');
+    // 使用实际的移动端工单列表页实现
+    return MobileTicketListPage(controller: controller);
   }
 
   @override
