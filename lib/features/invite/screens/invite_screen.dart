@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../controllers/profile_controller.dart';
-import '../../../core/models/commercial/invite.dart';
 import '../../../l10n/app_localizations.dart';
 
 class InviteScreen extends StatefulWidget {

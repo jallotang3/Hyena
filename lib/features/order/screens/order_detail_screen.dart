@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../../../controllers/order_controller.dart';
 import '../../../controllers/store_controller.dart';
-import '../../../core/models/commercial/order.dart';
 import '../../../l10n/app_localizations.dart';
 
 class OrderDetailScreen extends StatefulWidget {

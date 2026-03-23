@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../controllers/order_controller.dart';
-import '../../../core/models/commercial/order.dart';
 import '../../../l10n/app_localizations.dart';
 
 class PaymentResultScreen extends StatefulWidget {

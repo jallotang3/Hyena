@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/home_controller.dart';
-import '../../core/models/engine_state.dart';
 import '../../l10n/app_localizations.dart';
 import '../theme_token_provider.dart';
 
@@ -34,7 +33,7 @@ class _BrandXHomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.watch<HomeController>();
     final s = S.of(context)!;
-    final tokens = ThemeTokenProvider.of(context);
+    final tokens = ThemeTokenProvider.tokensOf(context);
 
     return Scaffold(
       backgroundColor: tokens.colorBackground,
@@ -96,8 +95,8 @@ class _BrandXTopBar extends StatelessWidget {
               Icon(Icons.person_outline, size: 14, color: tokens.colorMuted),
               const SizedBox(width: 4),
               Text(
-                controller.userEmail.isNotEmpty
-                    ? controller.userEmail
+                controller.userEmail != null && controller.userEmail!.isNotEmpty
+                    ? controller.userEmail!
                     : s.homeDefaultUser,
                 style: TextStyle(
                   color: tokens.colorOnSurface,
@@ -126,12 +125,18 @@ class _BrandXConnectButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isConnected = controller.engineState == EngineState.connected;
-    final isLoading = controller.engineState == EngineState.connecting ||
-        controller.engineState == EngineState.disconnecting;
+    final isConnected = controller.connectionState == EngineState.connected;
+    final isLoading = controller.connectionState == EngineState.connecting ||
+        controller.connectionState == EngineState.disconnecting;
 
     return GestureDetector(
-      onTap: isLoading ? null : controller.toggleConnection,
+      onTap: isLoading ? null : () {
+        if (isConnected) {
+          controller.disconnect();
+        } else {
+          controller.connect();
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
@@ -177,8 +182,8 @@ class _BrandXConnectButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               isLoading
-                  ? (isConnected ? s.disconnecting : s.connecting)
-                  : (isConnected ? s.connected : s.disconnected),
+                  ? (isConnected ? s.homeDisconnecting : s.homeConnecting)
+                  : (isConnected ? s.homeConnected : s.homeDisconnected),
               style: TextStyle(
                 color: isConnected ? tokens.colorOnPrimary : tokens.colorPrimary,
                 fontWeight: FontWeight.w700,
@@ -203,9 +208,19 @@ class _BrandXStatusCard extends StatelessWidget {
   final HomeController controller;
   final S s;
 
+  String _formatSpeed(double bytesPerSecond) {
+    if (bytesPerSecond < 1024) {
+      return '${bytesPerSecond.toStringAsFixed(0)} B/s';
+    } else if (bytesPerSecond < 1024 * 1024) {
+      return '${(bytesPerSecond / 1024).toStringAsFixed(1)} KB/s';
+    } else {
+      return '${(bytesPerSecond / (1024 * 1024)).toStringAsFixed(1)} MB/s';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isConnected = controller.engineState == EngineState.connected;
+    final isConnected = controller.connectionState == EngineState.connected;
     return AnimatedOpacity(
       opacity: isConnected ? 1.0 : 0.4,
       duration: const Duration(milliseconds: 300),
@@ -214,13 +229,13 @@ class _BrandXStatusCard extends StatelessWidget {
         children: [
           _StatChip(
             icon: Icons.upload_outlined,
-            label: controller.uploadSpeed,
+            label: _formatSpeed(controller.trafficUp),
             tokens: tokens,
           ),
           const SizedBox(width: 20),
           _StatChip(
             icon: Icons.download_outlined,
-            label: controller.downloadSpeed,
+            label: _formatSpeed(controller.trafficDown),
             tokens: tokens,
           ),
         ],
@@ -316,16 +331,16 @@ class _BrandXNodeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    controller.selectedNode?.name ?? s.notSelectedNode,
+                    controller.currentNode?.name ?? s.notSelectedNode,
                     style: TextStyle(
                       color: tokens.colorOnSurface,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                     ),
                   ),
-                  if (controller.selectedNode != null)
+                  if (controller.currentNode != null)
                     Text(
-                      '${controller.selectedNode?.latencyMs ?? '--'} ms',
+                      '${controller.currentNode?.latency ?? '--'} ms',
                       style: TextStyle(
                         color: tokens.colorMuted,
                         fontSize: 12,

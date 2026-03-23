@@ -7,6 +7,10 @@ import '../features/connection/connection_use_case.dart';
 import '../features/auth/auth_use_case.dart';
 import '../features/node/node_notifier.dart';
 
+// 皮肤层只需导入本文件，无需直接依赖领域层
+export '../core/models/proxy_node.dart';
+export '../core/models/traffic_stats.dart' show EngineState, RoutingMode;
+
 /// HomeController — 连接首页的固定 API 边界
 class HomeController extends ChangeNotifier {
   HomeController({

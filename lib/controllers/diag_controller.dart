@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../core/models/traffic_stats.dart';
 import '../infrastructure/logging/app_logger.dart';
+
+export '../core/models/traffic_stats.dart' show EngineState;
 import '../infrastructure/logging/log_file_manager.dart';
 import '../features/connection/connection_use_case.dart';
 

@@ -4,6 +4,8 @@ import '../core/models/commercial/ticket.dart';
 import '../core/result.dart';
 import '../features/ticket/ticket_use_case.dart';
 
+export '../core/models/commercial/ticket.dart';
+
 /// TicketController — 工单列表/详情/新建的固定 API 边界
 class TicketController extends ChangeNotifier {
   TicketController({required TicketUseCase ticketUseCase})

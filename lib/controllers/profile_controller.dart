@@ -7,6 +7,9 @@ import '../features/profile/profile_use_case.dart';
 import '../features/invite/invite_use_case.dart';
 import '../features/auth/auth_notifier.dart';
 
+export '../core/models/panel_user.dart';
+export '../core/models/commercial/invite.dart';
+
 /// ProfileController — 用户中心/邀请/礼品卡的固定 API 边界
 class ProfileController extends ChangeNotifier {
   ProfileController({

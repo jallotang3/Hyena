@@ -4,6 +4,8 @@ import '../core/models/commercial/notice.dart';
 import '../core/result.dart';
 import '../features/knowledge/knowledge_use_case.dart';
 
+export '../core/models/commercial/notice.dart' show KnowledgeArticle;
+
 /// KnowledgeController — 知识库的固定 API 边界
 class KnowledgeController extends ChangeNotifier {
   KnowledgeController({required KnowledgeUseCase knowledgeUseCase})

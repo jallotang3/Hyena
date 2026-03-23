@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../controllers/ticket_controller.dart';
-import '../../../core/models/commercial/ticket.dart';
 import '../../../l10n/app_localizations.dart';
 import 'ticket_detail_screen.dart';
 

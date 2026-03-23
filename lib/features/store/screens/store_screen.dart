@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../controllers/store_controller.dart';
-import '../../../core/models/commercial/plan_item.dart';
 import '../../../l10n/app_localizations.dart';
 
 class StoreScreen extends StatefulWidget {

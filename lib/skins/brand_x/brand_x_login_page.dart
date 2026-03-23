@@ -49,7 +49,7 @@ class _BrandXLoginViewState extends State<_BrandXLoginView> {
   Widget build(BuildContext context) {
     final c = context.watch<AuthController>();
     final s = S.of(context)!;
-    final tokens = ThemeTokenProvider.of(context);
+    final tokens = ThemeTokenProvider.tokensOf(context);
 
     return Scaffold(
       backgroundColor: tokens.colorBackground,
@@ -75,8 +75,8 @@ class _BrandXLoginViewState extends State<_BrandXLoginView> {
                   s: s,
                   controller: c,
                   onTap: () => c.login(
-                    email: _emailCtrl.text.trim(),
-                    password: _pwdCtrl.text,
+                    _emailCtrl.text.trim(),
+                    _pwdCtrl.text,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -197,7 +197,7 @@ class _FormCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            s.loginEmail,
+            s.loginEmailHint,
             style: TextStyle(
               color: tokens.colorOnSurface,
               fontSize: 13,
@@ -208,12 +208,12 @@ class _FormCard extends StatelessWidget {
           _TextField(
             controller: emailCtrl,
             tokens: tokens,
-            hint: s.loginEmail,
+            hint: s.loginEmailHint,
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 16),
           Text(
-            s.loginPassword,
+            s.loginPasswordHint,
             style: TextStyle(
               color: tokens.colorOnSurface,
               fontSize: 13,
@@ -224,7 +224,7 @@ class _FormCard extends StatelessWidget {
           _TextField(
             controller: pwdCtrl,
             tokens: tokens,
-            hint: s.loginPassword,
+            hint: s.loginPasswordHint,
             obscure: obscure,
             suffix: IconButton(
               icon: Icon(
@@ -349,13 +349,13 @@ class _FooterLinks extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          s.loginNoAccount,
+          s.loginRegisterPrompt,
           style: TextStyle(color: tokens.colorMuted, fontSize: 13),
         ),
         GestureDetector(
           onTap: () => Navigator.of(context).pushNamed('/register'),
           child: Text(
-            s.loginRegister,
+            s.loginRegisterLink,
             style: TextStyle(
               color: tokens.colorPrimary,
               fontWeight: FontWeight.w700,

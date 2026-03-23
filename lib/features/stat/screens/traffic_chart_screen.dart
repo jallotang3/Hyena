@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../controllers/traffic_chart_controller.dart';
-import '../../../core/models/commercial/notice.dart';
 import '../../../l10n/app_localizations.dart';
 
 class TrafficChartScreen extends StatefulWidget {

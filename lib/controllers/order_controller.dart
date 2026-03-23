@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 
 import '../core/models/commercial/order.dart';
 import '../core/result.dart';
+
+export '../core/models/commercial/order.dart';
 import '../features/order/order_use_case.dart';
 
 /// OrderController — 订单中心/详情/支付结果的固定 API 边界

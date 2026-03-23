@@ -4,6 +4,8 @@ import '../core/models/commercial/notice.dart';
 import '../core/result.dart';
 import '../features/notice/notice_use_case.dart';
 
+export '../core/models/commercial/notice.dart';
+
 /// NoticeController — 公告列表的固定 API 边界
 class NoticeController extends ChangeNotifier {
   NoticeController({required NoticeUseCase noticeUseCase})

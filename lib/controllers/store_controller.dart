@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../core/models/commercial/plan_item.dart';
 import '../core/models/commercial/order.dart';
 import '../core/result.dart';
+
+export '../core/models/commercial/plan_item.dart';
+export '../core/models/commercial/order.dart' show PaymentMethod, PaymentResult;
 import '../features/store/store_use_case.dart';
 
 /// StoreController — 商店/下单的固定 API 边界

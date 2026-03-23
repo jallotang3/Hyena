@@ -4,6 +4,8 @@ import '../core/models/commercial/notice.dart';
 import '../core/result.dart';
 import '../features/stat/stat_use_case.dart';
 
+export '../core/models/commercial/notice.dart' show TrafficRecord;
+
 /// TrafficChartController — 流量统计图表的固定 API 边界
 class TrafficChartController extends ChangeNotifier {
   TrafficChartController({required StatUseCase statUseCase})

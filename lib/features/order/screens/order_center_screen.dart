@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../controllers/order_controller.dart';
-import '../../../core/models/commercial/order.dart';
 import '../../../l10n/app_localizations.dart';
 
 class OrderCenterScreen extends StatefulWidget {

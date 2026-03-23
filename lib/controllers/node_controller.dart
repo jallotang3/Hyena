@@ -5,6 +5,7 @@ import '../features/node/node_notifier.dart';
 import '../features/connection/connection_use_case.dart';
 import '../infrastructure/storage/preferences.dart';
 
+export '../core/models/proxy_node.dart';
 export '../features/node/node_notifier.dart' show NodeLoadState, NodeSortMode;
 
 /// NodeController — 节点列表的固定 API 边界

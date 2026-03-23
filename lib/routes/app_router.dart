@@ -12,7 +12,6 @@ import '../controllers/settings_controller.dart';
 import '../controllers/diag_controller.dart';
 import '../controllers/traffic_chart_controller.dart';
 import '../controllers/splash_controller.dart';
-import '../core/models/commercial/order.dart';
 import '../features/auth/auth_notifier.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';
