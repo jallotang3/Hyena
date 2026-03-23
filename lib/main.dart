@@ -53,6 +53,9 @@ Future<void> main() async {
   await AppPreferences.init();
   await CacheStorage.initialize();
 
+  // 初始化平台工厂
+  SkinManager.instance.initPlatform();
+
   final skinId = AppPreferences.instance.skinId ?? AppConfig.skinId;
   await SkinManager.instance.load(skinId);
 

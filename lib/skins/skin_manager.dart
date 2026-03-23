@@ -1,4 +1,5 @@
 import '../infrastructure/logging/app_logger.dart';
+import '../platforms/platform_page_factory.dart';
 import 'skin_contract.dart';
 import 'skin_page_factory.dart';
 import 'theme_token_provider.dart';
@@ -8,19 +9,38 @@ import 'brand_x/theme_tokens.dart';
 import 'brand_x/brand_x_page_factory.dart';
 
 /// 皮肤管理器 — 按 skinId 加载皮肤包，加载失败自动回退 default
+///
+/// 架构说明：
+/// - PlatformPageFactory: 处理平台差异（移动端/桌面端/iOS）
+/// - SkinPageFactory: 处理品牌定制（可选覆盖特定页面）
+/// - ThemeTokens: 处理主题样式（颜色/字体/圆角）
 class SkinManager {
   SkinManager._();
   static final SkinManager instance = SkinManager._();
 
   static const String _supportedContractVersion = '1';
 
+  late PlatformPageFactory _platformFactory;
   ThemeTokens _tokens = kDefaultThemeTokens;
   SkinPageFactory _pageFactory = DefaultPageFactory();
   String _activeSkinId = 'default';
 
+  /// 平台页面工厂（处理平台差异）
+  PlatformPageFactory get platformFactory => _platformFactory;
+
+  /// 主题令牌（处理品牌样式）
   ThemeTokens get tokens => _tokens;
+
+  /// 皮肤页面工厂（可选覆盖特定页面）
   SkinPageFactory get pageFactory => _pageFactory;
+
   String get activeSkinId => _activeSkinId;
+
+  /// 初始化平台工厂
+  void initPlatform() {
+    _platformFactory = PlatformPageFactory.create();
+    AppLogger.i('平台工厂初始化: ${_platformFactory.platformType}', tag: LogTag.skin);
+  }
 
   Future<void> load(String skinId) async {
     try {

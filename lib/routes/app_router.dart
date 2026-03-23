@@ -13,26 +13,27 @@ import '../controllers/diag_controller.dart';
 import '../controllers/traffic_chart_controller.dart';
 import '../controllers/splash_controller.dart';
 import '../features/auth/auth_notifier.dart';
-import '../features/auth/screens/splash_screen.dart';
-import '../features/auth/screens/login_screen.dart';
-import '../features/auth/screens/register_screen.dart';
-import '../features/auth/screens/forgot_password_screen.dart';
-import '../features/connection/screens/home_screen.dart';
-import '../features/diagnostics/screens/diagnostics_screen.dart';
-import '../features/invite/screens/invite_screen.dart';
-import '../features/stat/screens/traffic_chart_screen.dart';
-import '../features/node/screens/node_list_screen.dart';
-import '../features/order/screens/order_center_screen.dart';
-import '../features/order/screens/order_detail_screen.dart';
-import '../features/profile/screens/profile_screen.dart';
-import '../features/settings/screens/settings_screen.dart';
-import '../features/store/screens/store_screen.dart';
-import '../features/store/screens/payment_result_screen.dart';
-import '../features/ticket/screens/ticket_list_screen.dart';
 import '../skins/skin_manager.dart';
 
+// PaymentResult 类型定义
+class PaymentResult {
+  final String tradeNo;
+  final bool success;
+
+  PaymentResult({required this.tradeNo, required this.success});
+}
+
+/// 应用路由配置
+///
+/// 架构说明：
+/// 1. 优先使用 PlatformPageFactory（处理平台差异）
+/// 2. 其次使用 SkinPageFactory（可选品牌定制）
+/// 3. 最后回退到默认 Screen 实现
 class AppRouter {
   static GoRouter router(AuthNotifier auth) {
+    final platformFactory = SkinManager.instance.platformFactory;
+    final skinFactory = SkinManager.instance.pageFactory;
+
     return GoRouter(
       initialLocation: '/splash',
       redirect: (context, state) {
@@ -48,119 +49,151 @@ class AppRouter {
       routes: [
         GoRoute(
           path: '/splash',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.splashPage(
-                  ctx.read<SplashController>()) ??
-              const SplashScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<SplashController>();
+            // 1. 尝试皮肤定制页面
+            final skinPage = skinFactory.splashPage(controller);
+            if (skinPage != null) return skinPage;
+            // 2. 使用平台适配页面
+            return platformFactory.buildSplashPage(controller);
+          },
         ),
         GoRoute(
           path: '/login',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.loginPage(
-                  ctx.read<AuthController>()) ??
-              const LoginScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<AuthController>();
+            final skinPage = skinFactory.loginPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildLoginPage(controller);
+          },
         ),
         GoRoute(
           path: '/register',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.registerPage(
-                  ctx.read<AuthController>()) ??
-              const RegisterScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<AuthController>();
+            final skinPage = skinFactory.registerPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildRegisterPage(controller);
+          },
         ),
         GoRoute(
           path: '/forgot-password',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.forgotPasswordPage(
-                  ctx.read<AuthController>()) ??
-              const ForgotPasswordScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<AuthController>();
+            final skinPage = skinFactory.forgotPasswordPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildForgotPasswordPage(controller);
+          },
         ),
         GoRoute(
           path: '/home',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.homePage(
-                  ctx.read<HomeController>()) ??
-              const HomeScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<HomeController>();
+            final skinPage = skinFactory.homePage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildHomePage(controller);
+          },
         ),
         GoRoute(
           path: '/nodes',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.nodePage(
-                  ctx.read<NodeController>()) ??
-              const NodeListScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<NodeController>();
+            final skinPage = skinFactory.nodePage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildNodeListPage(controller);
+          },
         ),
         GoRoute(
           path: '/store',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.storePage(
-                  ctx.read<StoreController>()) ??
-              const StoreScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<StoreController>();
+            final skinPage = skinFactory.storePage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildStorePage(controller);
+          },
         ),
         GoRoute(
           path: '/orders',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.orderCenterPage(
-                  ctx.read<OrderController>()) ??
-              const OrderCenterScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<OrderController>();
+            final skinPage = skinFactory.orderCenterPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildOrderCenterPage(controller);
+          },
         ),
         GoRoute(
           path: '/orders/:tradeNo',
           builder: (ctx, state) {
             final tradeNo = state.pathParameters['tradeNo']!;
-            return SkinManager.instance.pageFactory
-                    .orderDetailPage(ctx.read<OrderController>()) ??
-                OrderDetailScreen(tradeNo: tradeNo);
+            final controller = ctx.read<OrderController>();
+            final skinPage = skinFactory.orderDetailPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildOrderDetailPage(controller, tradeNo);
           },
         ),
         GoRoute(
           path: '/payment-result',
           builder: (ctx, state) {
             final pr = state.extra! as PaymentResult;
-            return SkinManager.instance.pageFactory
-                    .paymentResultPage(ctx.read<OrderController>()) ??
-                PaymentResultScreen(paymentResult: pr);
+            final controller = ctx.read<OrderController>();
+            final skinPage = skinFactory.paymentResultPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildPaymentResultPage(controller, pr.tradeNo);
           },
         ),
         GoRoute(
           path: '/tickets',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.ticketListPage(
-                  ctx.read<TicketController>()) ??
-              const TicketListScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<TicketController>();
+            final skinPage = skinFactory.ticketListPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildTicketListPage(controller);
+          },
         ),
         GoRoute(
           path: '/profile',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.profilePage(
-                  ctx.read<ProfileController>()) ??
-              const ProfileScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<ProfileController>();
+            final skinPage = skinFactory.profilePage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildProfilePage(controller);
+          },
         ),
         GoRoute(
           path: '/invite',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.invitePage(
-                  ctx.read<ProfileController>()) ??
-              const InviteScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<ProfileController>();
+            final skinPage = skinFactory.invitePage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildInvitePage(controller);
+          },
         ),
         GoRoute(
           path: '/settings',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.settingsPage(
-                  ctx.read<SettingsController>()) ??
-              const SettingsScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<SettingsController>();
+            final skinPage = skinFactory.settingsPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildSettingsPage(controller);
+          },
         ),
         GoRoute(
           path: '/diagnostics',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.diagnosticsPage(
-                  ctx.read<DiagController>()) ??
-              const DiagnosticsScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<DiagController>();
+            final skinPage = skinFactory.diagnosticsPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildDiagnosticsPage(controller);
+          },
         ),
         GoRoute(
           path: '/traffic-chart',
-          builder: (ctx, __) =>
-              SkinManager.instance.pageFactory.trafficChartPage(
-                  ctx.read<TrafficChartController>()) ??
-              const TrafficChartScreen(),
+          builder: (ctx, __) {
+            final controller = ctx.read<TrafficChartController>();
+            final skinPage = skinFactory.trafficChartPage(controller);
+            if (skinPage != null) return skinPage;
+            return platformFactory.buildTrafficChartPage(controller);
+          },
         ),
       ],
     );
