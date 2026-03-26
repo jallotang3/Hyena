@@ -316,13 +316,14 @@ dependencies {
 新建 `android/app/src/main/kotlin/com/hyena/hyena/HyenaCorePlugin.kt`：
 
 ```kotlin
-import com.HyenaCore.core.mobile.Mobile  // gomobile 生成的包
+import com.HyenaCore.core.mobile.Mobile
+import com.HyenaCore.core.mobile.SetupOptions  // gomobile 生成（Java 类名非 MobileSetupOptions）
 
 class HyenaCorePlugin : MethodCallHandler {
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
             "setup" -> {
-                val opt = MobileSetupOptions().apply {
+                val opt = SetupOptions().apply {
                     basePath = call.argument("basePath")
                     workingDir = call.argument("workingDir")
                     tempDir = call.argument("tempDir")
@@ -576,3 +577,9 @@ flutter run -d android
 4. **Android 64-bit**：AAR 需包含 `arm64-v8a` 和 `x86_64` slice，确认 `HyenaCore.aar` 内 `jni/` 目录结构完整。
 5. **gRPC 端口冲突**：动态选取端口时需处理端口被占用的情况，`hcore` 内部已有 `IsPortInUse` 检查，但 Flutter 侧也需重试逻辑。
 6. **后台进程保活**：Android/iOS 后台 VPN 需要系统级权限，Phase 3/4 需要额外的 manifest/entitlement 配置。
+7. **Android：Go `tls.ConnectionState` panic（上游构建）**：若 log 中出现  
+   `panic: tls: ConnectionState is not equal to tls.ConnectionState: struct field mismatch ... HelloRetryRequest ... vs ... psiphon-tls`，  
+   说明 **标准 `crypto/tls` 与 `github.com/Psiphon-Labs/psiphon-tls` 在同一进程内结构体布局冲突**，属于 **HyenaCore / hiddify-core 的 Go 依赖与编译方式问题**，需在 **重新编译 AAR** 时统一 TLS 实现，应用层无法修复。  
+   **Flutter 侧临时规避**：默认 **不**在 Android 上启用 `HyenaCoreEngine`（使用 `SingboxDriver` stub），避免启动即调用 `Mobile.setup` 触发崩溃。若你确认 AAR 已修复，构建时加上：  
+   `--dart-define=HYENA_CORE_ANDROID=true`  
+   对应常量见 `lib/config/app_config.dart` 中的 `enableHyenaCoreAndroid`。

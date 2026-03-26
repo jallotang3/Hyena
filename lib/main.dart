@@ -66,14 +66,20 @@ Future<void> main() async {
   adapterRegistry.register(V2boardAdapter());
 
   final engineRegistry = EngineRegistry.instance;
-  // 桌面 + 移动：HyenaCoreEngine；Web 等无原生库时用 SingboxDriver stub
-  final coreEngine = (Platform.isMacOS ||
-          Platform.isWindows ||
-          Platform.isLinux ||
-          Platform.isAndroid ||
-          Platform.isIOS)
-      ? HyenaCoreEngine()
-      : SingboxDriver();
+  // 桌面 / iOS / Android（默认）：HyenaCore；Android 可 HYENA_CORE_ANDROID=false 仅用 stub
+  final useHyenaCore = Platform.isMacOS ||
+      Platform.isWindows ||
+      Platform.isLinux ||
+      Platform.isIOS ||
+      (Platform.isAndroid && AppConfig.enableHyenaCoreAndroid);
+  final coreEngine =
+      useHyenaCore ? HyenaCoreEngine() : SingboxDriver();
+  if (Platform.isAndroid && !AppConfig.enableHyenaCoreAndroid) {
+    AppLogger.w(
+      'Android 使用 SingboxDriver stub（HYENA_CORE_ANDROID=false）。无真实 VPN，仅用于开发/无 AAR 场景。',
+      tag: LogTag.vpn,
+    );
+  }
   engineRegistry.register(coreEngine);
   final singboxDriver = coreEngine;
 

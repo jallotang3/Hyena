@@ -23,6 +23,15 @@ class LibboxFfi {
   /// 加载平台对应的 native 库
   static Future<bool> load() async {
     if (_library != null) return true;
+    // gomobile 的 HyenaCore 通过 JNI（AAR）暴露，进程内不存在可 dlopen 的 libbox.so。
+    // Android 上真实 VPN 应使用 [HyenaCoreEngine]，而非本 FFI。
+    if (Platform.isAndroid) {
+      AppLogger.i(
+        'Android 无 libbox.so FFI；请使用 HyenaCoreEngine（默认开启 HYENA_CORE_ANDROID）',
+        tag: LogTag.vpn,
+      );
+      return false;
+    }
     try {
       _library = _openLibrary();
       AppLogger.i('libbox 加载成功', tag: LogTag.vpn);
@@ -41,8 +50,6 @@ class LibboxFfi {
         } catch (_) {}
       }
       throw Exception('libbox DLL not found. Put libbox-amd64.dll in app directory.');
-    } else if (Platform.isAndroid) {
-      return ffi.DynamicLibrary.open('libbox.so');
     } else if (Platform.isIOS || Platform.isMacOS) {
       return ffi.DynamicLibrary.process();
     } else if (Platform.isLinux) {

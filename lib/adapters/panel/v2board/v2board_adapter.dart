@@ -724,14 +724,20 @@ class V2boardAdapter implements PanelAdapter {
   }
 
   PaymentMethod _mapPaymentMethod(Map<String, dynamic> data) {
+    // 与 Xboard OpenAPI 一致：列表项可能不含 enable，未返回时视为启用。
+    final enableRaw = data['enable'];
+    final enable = enableRaw == null
+        ? true
+        : (enableRaw == 1 || enableRaw == true);
     return PaymentMethod(
       id: (data['id'] as num?)?.toInt() ?? 0,
       name: data['name']?.toString() ?? '',
       payment: data['payment']?.toString() ?? '',
+      icon: data['icon']?.toString(),
       handlingFeeFixed: (data['handling_fee_fixed'] as num?)?.toInt(),
       handlingFeePercent:
           (data['handling_fee_percent'] as num?)?.toDouble(),
-      enable: data['enable'] == 1 || data['enable'] == true,
+      enable: enable,
     );
   }
 

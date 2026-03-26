@@ -2,11 +2,11 @@
 
 <div align="center">
 
-**多面板可插拔 VPN 客户端**
+**Multi-panel pluggable VPN client**
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%20%7C%20Windows%20%7C%20macOS%20%7C%20iOS-lightgrey.svg)](https://github.com/yourusername/hyena)
+[![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/jallotang3/Hyena)
 
 [English](README.md) | [简体中文](README_zh.md)
 
@@ -14,85 +14,67 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
-Hyena is a **multi-panel pluggable VPN client** designed for SaaS operations, featuring:
+Hyena is a **multi-panel pluggable VPN client** for SaaS-style operations:
 
-- 🔌 **Multi-Panel Support**: Unified adapter for xboard, v2board, sspanel, and more
-- 🎨 **Brandable Skins**: Customize UI without touching business logic
-- 🚀 **Pluggable Engine**: sing-box by default, easily swap or run multiple engines
-- 🤖 **Automated Delivery**: CI/CD templates for one-click branded builds
+- **Panel adapters**: Xboard, V2board (extensible)
+- **Skins**: brandable UI without changing business logic
+- **Core engine**: **HyenaCore** integration (desktop FFI + mobile MethodChannel + optional local gRPC for stats/logs); `SingboxDriver` remains as stub/fallback where no native library is available
+- **CI/CD**: templates for branded builds (`--dart-define` panel/site/skin)
 
-## ✨ Features
+## Features
 
-### Core Capabilities
+### Panels & protocols
 
-- **Panel Adapters**
-  - ✅ Xboard (full support)
-  - ✅ V2board (full support)
-  - 🔄 SSPanel (planned)
-  - Zero-invasion architecture for adding new panels
+- **Adapters**: Xboard and V2board (full); SSPanel planned; add panels via `PanelAdapter` + registry
+- **Protocols**: VLESS / VMess / Shadowsocks / Trojan / Hysteria2 (via sing-box JSON from subscription)
+- **UX**: latency tests, node selection, multi-language (English, 简体中文)
 
-- **Protocol Support**
-  - VLESS / VMess / Shadowsocks / Trojan / Hysteria2
-  - Automatic node parsing from subscription URLs
-  - Latency testing and smart node selection
+### Business (typical SaaS flows)
 
-- **Business Features**
-  - Complete purchase flow: plans → orders → payment
-  - Ticket system for customer support
-  - Invite & commission tracking
-  - Traffic statistics and visualization
-  - Multi-language support (English, 简体中文)
+- Plans → orders → payment
+- Tickets, invites, traffic charts
+- Configurable via `AppConfig` / `--dart-define`
 
-- **Connection Management**
-  - One-tap connect/disconnect
-  - Routing mode switching (global/rules/direct)
-  - Auto-reconnect with retry logic
-  - Real-time traffic monitoring
-  - Connection duration tracking
+### Connection stack (current)
 
-### Developer Experience
+| Layer | Notes |
+|--------|--------|
+| **HyenaCoreEngine** (`engineType: hyena`) | Default on **Android, iOS, Windows, macOS, Linux** when native **HyenaCore** is present |
+| Desktop | Dynamic library + C FFI (`HyenaCoreDesktopFfi`), optional **gRPC** (`HyenaCoreGrpcClient`) for live traffic & logs |
+| Mobile | **MethodChannel** `com.hyena/core` → Kotlin (`HyenaCorePlugin`) / Swift (`HyenaCorePlugin`) |
+| Fallback | **SingboxDriver** stub (e.g. web or if native load/setup fails) |
 
-- **Clean Architecture**
-  - Controller/View separation
-  - Domain-driven design
-  - Dependency injection with Provider
-  - Type-safe routing
+See **[HyenaCore integration plan](docs/hyena-core/integration-plan.md)** for symbols, phases, and platform notes.
 
-- **Skin System**
-  - Theme token abstraction
-  - Page-level customization via SkinPageFactory
-  - Brand X example skin included
+### Native binaries (not in Git)
 
-- **CI/CD Ready**
-  - GitHub Actions workflows
-  - Parameterized builds for multiple brands
-  - Automated release pipeline
+Large artifacts (**`.aar`**, **`.dll`**, **`.dylib`**, **`HyenaCore.xcframework`**, etc.) are **gitignored** (GitHub file-size limits). Place them under `native/libs/` according to the integration doc before building. Headers and `HyenaCore.podspec` may be tracked for reference.
 
-## 🚀 Quick Start
+### Developer experience
+
+- Layered architecture: controllers → use cases → adapters / `CoreEngine`
+- Provider for DI; `go_router` for navigation
+- Skin system: `SkinManager`, `SkinPageFactory`, mobile shell & bottom nav
+
+## Quick start
 
 ### Prerequisites
 
-- Flutter 3.x
-- Dart 3.x
-- Android Studio / Xcode (for mobile platforms)
-- Visual Studio 2022 (for Windows)
+- Flutter 3.x / Dart 3.x
+- Android Studio / Xcode (mobile)
+- Visual Studio 2022 (Windows desktop)
+- **HyenaCore** native libraries copied into `native/libs/` (see integration plan)
 
-### Installation
+### Run (development)
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/hyena.git
-cd hyena
-
-# Install dependencies
+git clone https://github.com/jallotang3/Hyena.git
+cd Hyena
 flutter pub get
-
-# Generate localization files
 flutter gen-l10n
 
-# Run the app (development mode)
 flutter run \
   --dart-define=PANEL_API_BASE=https://panel.example.com \
   --dart-define=PANEL_TYPE=xboard \
@@ -100,164 +82,85 @@ flutter run \
   --dart-define=SITE_NAME=HyenaVPN
 ```
 
-### Build for Production
+**Android + HyenaCore AAR**: the app defaults to **not** loading `HyenaCoreEngine` on Android (uses `SingboxDriver` stub) to avoid a known native **Go TLS / psiphon-tls** crash at startup. After you have a fixed AAR, add `--dart-define=HYENA_CORE_ANDROID=true`. See [integration plan §7](docs/hyena-core/integration-plan.md).
+
+### Production build (example)
 
 ```bash
-# Android APK
 flutter build apk \
   --dart-define=PANEL_API_BASE=https://panel.example.com \
   --dart-define=PANEL_TYPE=xboard \
   --dart-define=SITE_ID=prod \
   --dart-define=SITE_NAME=YourBrand \
   --dart-define=SKIN_ID=default
-
-# Windows
-flutter build windows \
-  --dart-define=PANEL_API_BASE=https://panel.example.com \
-  --dart-define=PANEL_TYPE=xboard \
-  --dart-define=SITE_ID=prod \
-  --dart-define=SITE_NAME=YourBrand
 ```
 
-## 📚 Documentation
+## Documentation
 
-- [Requirements Analysis](docs/requirements-analysis.md)
-- [System Design](docs/system-design.md)
-- [Development Plan](docs/development-plan.md)
-- [Progress Tracking](docs/progress.md)
-- [Skin Contract](docs/skin-contract.md)
-- [Panel Adapter Development Guide](docs/guides/panel-adapter-development.md)
+- [Requirements analysis](docs/requirements-analysis.md)
+- [System design](docs/system-design.md)
+- [Development plan](docs/development-plan.md)
+- [Progress](docs/progress.md)
+- [Skin contract](docs/skin-contract.md)
+- [HyenaCore integration](docs/hyena-core/integration-plan.md)
+- [Panel adapter guide](docs/guides/panel-adapter-development.md)
 
-## 🏗️ Architecture
+## Architecture (simplified)
 
 ```
 ┌─────────────────────────────────────────┐
-│  View Layer (Skin-replaceable)         │
-│  ↓ Only accesses Controller API         │
+│  UI (skins / mobile shell)              │
 ├─────────────────────────────────────────┤
-│  Controller Layer (Fixed API)           │
-│  HomeController │ NodeController │ ...  │
-│  ↓ Orchestrates UseCases                │
+│  Controllers                            │
 ├─────────────────────────────────────────┤
-│  Application Layer                      │
-│  AuthUseCase │ NodeUseCase │ ...        │
-│  ↓ Depends on abstractions              │
+│  Use cases (auth, nodes, connection…)    │
 ├─────────────────────────────────────────┤
-│  Domain Layer                           │
-│  PanelAdapter │ CoreEngine (interfaces) │
+│  Domain: PanelAdapter │ CoreEngine      │
 ├─────────────────────────────────────────┤
-│  Infrastructure Layer                   │
-│  XboardAdapter │ V2boardAdapter         │
-│  SingboxDriver │ Network │ Storage      │
+│  Infra: Xboard/V2board │ HyenaCoreEngine│
+│         SingboxDriver (stub) │ storage   │
 └─────────────────────────────────────────┘
 ```
 
-**Key Principles**:
-- Business logic depends on abstractions, not implementations
-- New panels/engines/skins added without modifying existing code
-- UI layer completely decoupled from data sources
+## Customization
 
-## 🎨 Customization
+### New panel adapter
 
-### Adding a New Panel Adapter
+See [Panel adapter development](docs/guides/panel-adapter-development.md).
 
-See [Panel Adapter Development Guide](docs/guides/panel-adapter-development.md) for detailed instructions.
+### New skin
 
-```dart
-// 1. Implement PanelAdapter interface
-class YourPanelAdapter implements PanelAdapter {
-  @override
-  String get panelType => 'your_panel';
-  
-  // Implement all required methods...
-}
+Register via `SkinManager` and optional `SkinPageFactory` (see [skin contract](docs/skin-contract.md)).
 
-// 2. Register in main.dart
-void main() {
-  final registry = PanelAdapterRegistry.instance;
-  registry.register(YourPanelAdapter());
-  // ...
-}
-```
-
-### Creating a Custom Skin
-
-```dart
-// 1. Define theme tokens
-const kYourSkinTokens = ThemeTokens(
-  colorPrimary: Color(0xFF6366F1),
-  colorBackground: Color(0xFF0F172A),
-  // ... other tokens
-);
-
-// 2. Create page factory (optional)
-class YourSkinPageFactory implements SkinPageFactory {
-  @override
-  Widget? buildHomePage(HomeController controller) {
-    return YourCustomHomePage(controller: controller);
-  }
-  // ... other pages
-}
-
-// 3. Register skin
-await SkinManager.instance.load('your_skin');
-```
-
-## 🧪 Testing
+## Testing
 
 ```bash
-# Run all tests
 flutter test
-
-# Run with coverage
 flutter test --coverage
-
-# Run specific test file
-flutter test test/adapters/panel/xboard/node_normalizer_test.dart
 ```
 
-**Current Test Coverage**:
-- SkinManager: 8 test cases ✅
-- NodeNormalizer: 11 test cases ✅
-- Total: 19 test cases passing
+## Contributing
 
-## 🤝 Contributing
+1. Fork → feature branch → PR  
+2. Run `flutter analyze` / `dart format`  
+3. Add tests when behavior changes  
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting PRs.
+## License
 
-### Development Workflow
+MIT — see [LICENSE](LICENSE).
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## Acknowledgments
 
-### Code Standards
+- [sing-box](https://github.com/SagerNet/sing-box)
+- [Xboard](https://github.com/cedar2025/Xboard), [V2board](https://github.com/v2board/v2board)
+- HyenaCore builds on upstream **hiddify-core**-style mobile/desktop bindings (see integration doc)
 
-- Follow [Effective Dart](https://dart.dev/guides/language/effective-dart) guidelines
-- Run `flutter analyze` and `dart format` before committing
-- Write tests for new features
-- Update documentation as needed
+## Links
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [sing-box](https://github.com/SagerNet/sing-box) - Core proxy engine
-- [Xboard](https://github.com/cedar2025/Xboard) - Panel reference implementation
-- [V2board](https://github.com/v2board/v2board) - Panel reference implementation
-- [MagicLamp](https://github.com/yourusername/MagicLamp) - libbox integration reference
-
-## 📧 Contact
-
-- Issues: [GitHub Issues](https://github.com/yourusername/hyena/issues)
-- Discussions: [GitHub Discussions](https://github.com/yourusername/hyena/discussions)
+- Issues: [github.com/jallotang3/Hyena/issues](https://github.com/jallotang3/Hyena/issues)
 
 ---
 
 <div align="center">
-Made with ❤️ by the Hyena Team
+Made with care by the Hyena team
 </div>

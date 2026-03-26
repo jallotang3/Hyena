@@ -1,5 +1,5 @@
 name: hyena
-description: "Hyena — 多面板可插拔 VPN 客户端，V1 默认接入 xboard + sing-box"
+description: "Hyena — 多面板可插拔 VPN 客户端，默认 HyenaCore 内核 + xboard/V2board 适配"
 publish_to: 'none'
 
 version: 0.1.0+1

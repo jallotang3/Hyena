@@ -1,7 +1,7 @@
 package com.hyena.hyena
 
 import com.HyenaCore.core.mobile.Mobile
-import com.HyenaCore.core.mobile.MobileSetupOptions
+import com.HyenaCore.core.mobile.SetupOptions
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -14,7 +14,7 @@ import io.flutter.plugin.common.MethodChannel.Result
  *
  * AAR 包名: com.HyenaCore.core
  * 主要类:   com.HyenaCore.core.mobile.Mobile
- *           com.HyenaCore.core.mobile.MobileSetupOptions
+ *           com.HyenaCore.core.mobile.SetupOptions（gomobile 生成名，非 MobileSetupOptions）
  */
 class HyenaCorePlugin : FlutterPlugin, MethodCallHandler {
 
@@ -45,7 +45,7 @@ class HyenaCorePlugin : FlutterPlugin, MethodCallHandler {
     }
 
     private fun handleSetup(call: MethodCall, result: Result) {
-        val opt = MobileSetupOptions()
+        val opt = SetupOptions()
         opt.basePath   = call.argument<String>("basePath")   ?: ""
         opt.workingDir = call.argument<String>("workingDir") ?: ""
         opt.tempDir    = call.argument<String>("tempDir")    ?: ""

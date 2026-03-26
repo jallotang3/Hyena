@@ -722,13 +722,20 @@ class XboardAdapter implements PanelAdapter {
   }
 
   PaymentMethod _mapPaymentMethod(Map<String, dynamic> data) {
+    // GET /user/order/getPaymentMethod：OpenAPI 仅含 id/name/payment/icon/handling_fee_*，无 enable；
+    // 文档说明为「所有启用的支付方式」，故未返回 enable 时视为 true。
+    final enableRaw = data['enable'];
+    final enable = enableRaw == null
+        ? true
+        : (enableRaw == 1 || enableRaw == true);
     return PaymentMethod(
       id: (data['id'] as num?)?.toInt() ?? 0,
       name: data['name']?.toString() ?? '',
       payment: data['payment']?.toString() ?? '',
+      icon: data['icon']?.toString(),
       handlingFeeFixed: (data['handling_fee_fixed'] as num?)?.toInt(),
       handlingFeePercent: (data['handling_fee_percent'] as num?)?.toDouble(),
-      enable: data['enable'] == 1 || data['enable'] == true,
+      enable: enable,
     );
   }
 

@@ -66,5 +66,6 @@ flutter {
 
 dependencies {
     // HyenaCore gomobile AAR
-    implementation(files("../../../native/libs/android/HyenaCore.aar"))
+    // 自 android/app 上两级到 Flutter 工程根，再进 native/libs（勿用 ../../../ 会指到 src/）
+    implementation(files("../../native/libs/android/HyenaCore.aar"))
 }

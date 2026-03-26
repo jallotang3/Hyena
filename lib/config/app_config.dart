@@ -8,6 +8,7 @@
 ///   --dart-define=SITE_ID=brand_x_prod \
 ///   --dart-define=SITE_NAME=HyenaVPN \
 ///   --dart-define=SKIN_ID=brand_x
+///   --dart-define=HYENA_CORE_ANDROID=false  # 仅当需关闭 HyenaCore、使用 Singbox stub 时
 /// ```
 abstract final class AppConfig {
   static const panelApiBase = String.fromEnvironment(
@@ -33,6 +34,14 @@ abstract final class AppConfig {
   static const defaultLocale = String.fromEnvironment(
     'DEFAULT_LOCALE',
     defaultValue: 'system',
+  );
+
+  /// Android 是否使用 `HyenaCoreEngine`（gomobile AAR）。
+  /// 默认 **true**（上游 Android 构建已带 `without_psiphon`，避免 TLS 冲突）。
+  /// 若需仅用 UI、不接真实内核，可 `--dart-define=HYENA_CORE_ANDROID=false`。
+  static const enableHyenaCoreAndroid = bool.fromEnvironment(
+    'HYENA_CORE_ANDROID',
+    defaultValue: true,
   );
 
   static const appVersion = '0.1.0';

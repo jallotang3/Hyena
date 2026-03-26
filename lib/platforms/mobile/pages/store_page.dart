@@ -192,9 +192,9 @@ class _MobileStorePageState extends State<MobileStorePage> {
                 ),
               ),
 
-              // ── 套餐列表（65%高度）──
+              // ── 套餐列表（80%）──
               Expanded(
-                flex: 65,
+                flex: 80,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
                   itemCount: sellable.length,
@@ -218,9 +218,9 @@ class _MobileStorePageState extends State<MobileStorePage> {
                 ),
               ),
 
-              // ── 支付区域（35%高度）──
+              // ── 支付区域（20%，含支付方式 + 应付金额）──
               Expanded(
-                flex: 35,
+                flex: 20,
                 child: Container(
                   decoration: BoxDecoration(
                     color: tokens.colorSurface,
@@ -236,14 +236,14 @@ class _MobileStorePageState extends State<MobileStorePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 支付方式标题
+                      // 支付方式标题（压缩纵向留白）
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                         child: Text(
                           s.storePaymentMethodLabel,
                           style: TextStyle(
                             color: tokens.colorMuted,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
                           ),
@@ -253,20 +253,20 @@ class _MobileStorePageState extends State<MobileStorePage> {
                       // 支付方式列表
                       if (methods.isEmpty)
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                           child: Text(
                             '暂无可用支付方式',
-                            style: TextStyle(color: tokens.colorMuted, fontSize: 13),
+                            style: TextStyle(color: tokens.colorMuted, fontSize: 12),
                           ),
                         )
                       else
                         SizedBox(
-                          height: 44,
+                          height: 34,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: methods.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 8),
+                            separatorBuilder: (_, __) => const SizedBox(width: 6),
                             itemBuilder: (_, i) {
                               final m = methods[i];
                               final isSelected = m.id == _selectedMethodId;
@@ -274,7 +274,8 @@ class _MobileStorePageState extends State<MobileStorePage> {
                                 onTap: () => setState(() => _selectedMethodId = m.id),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 150),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? tokens.colorPrimary.withValues(alpha: 0.1)
@@ -293,8 +294,9 @@ class _MobileStorePageState extends State<MobileStorePage> {
                                       color: isSelected
                                           ? tokens.colorPrimary
                                           : tokens.colorOnBackground,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                      height: 1.1,
                                     ),
                                   ),
                                 ),
@@ -308,7 +310,7 @@ class _MobileStorePageState extends State<MobileStorePage> {
                       // 金额 + 立即付款
                       Padding(
                         padding: EdgeInsets.fromLTRB(
-                          16, 8, 16, MediaQuery.of(context).padding.bottom + 12),
+                          16, 4, 16, MediaQuery.of(context).padding.bottom + 10),
                         child: Row(
                           children: [
                             Column(
