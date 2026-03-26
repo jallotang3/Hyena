@@ -34,9 +34,11 @@ Thumbs.db
 *.swp
 *~
 
-# Native libs (too large for git, use artifact storage)
+# Native libs (too large for git / GitHub 100MB limit — 本地或制品库提供)
 native/libs/android/*.aar
 native/libs/android/*.so
 native/libs/windows/*.dll
 native/libs/ios/*.framework
+native/libs/ios/HyenaCore.xcframework/
 native/libs/macos/*.framework
+native/libs/macos/*.dylib

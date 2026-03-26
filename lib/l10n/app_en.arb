@@ -227,7 +227,7 @@
 
   "navHome": "HOME",
   "navNodes": "NODES",
-  "navSettings": "SETTINGS",
+  "navStore": "STORE",
   "navMy": "MY",
 
   "errorUnknown": "An unknown error occurred",

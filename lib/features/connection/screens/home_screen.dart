@@ -477,7 +477,7 @@ class _BottomNav extends StatelessWidget {
     final items = [
       (Icons.home_outlined, Icons.home, s.navHome),
       (Icons.language_outlined, Icons.language, s.navNodes),
-      (Icons.settings_outlined, Icons.settings, s.navSettings),
+      (Icons.settings_outlined, Icons.settings, s.settings),
       (Icons.person_outline, Icons.person, s.navMy),
     ];
 

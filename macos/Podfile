@@ -39,4 +39,14 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
   end
+
+  # 将 HyenaCore.dylib 复制到 app bundle，使 DynamicLibrary.open('HyenaCore.dylib') 能找到它
+  dylib_src = File.expand_path('../native/libs/macos/HyenaCore.dylib', File.dirname(__FILE__))
+  runner_dir = File.expand_path('Runner', File.dirname(__FILE__))
+  if File.exist?(dylib_src)
+    FileUtils.cp(dylib_src, runner_dir)
+    puts "Copied HyenaCore.dylib to #{runner_dir}"
+  else
+    puts "WARNING: HyenaCore.dylib not found at #{dylib_src}"
+  end
 end

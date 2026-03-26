@@ -12,7 +12,7 @@
 abstract final class AppConfig {
   static const panelApiBase = String.fromEnvironment(
     'PANEL_API_BASE',
-    defaultValue: 'https://panel.example.com',
+    defaultValue: 'http://192.168.0.227:7001/',
   );
   static const panelType = String.fromEnvironment(
     'PANEL_TYPE',

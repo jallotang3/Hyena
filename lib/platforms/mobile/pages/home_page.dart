@@ -21,8 +21,6 @@ class MobileHomePage extends StatefulWidget {
 }
 
 class _MobileHomePageState extends State<MobileHomePage> {
-  int _bottomIndex = 0;
-
   String _formatBytes(double bytes) {
     if (bytes < 1024) {
       return '${bytes.toStringAsFixed(0)} B/s';
@@ -157,25 +155,6 @@ class _MobileHomePageState extends State<MobileHomePage> {
                   ],
                 ),
               ),
-            ),
-
-            // Bottom nav
-            _BottomNav(
-              index: _bottomIndex,
-              tokens: tokens,
-              onTap: (i) {
-                setState(() => _bottomIndex = i);
-                switch (i) {
-                  case 0:
-                    break;
-                  case 1:
-                    context.push('/nodes');
-                  case 2:
-                    context.push('/settings');
-                  case 3:
-                    context.push('/profile');
-                }
-              },
             ),
           ],
         ),
@@ -509,124 +488,6 @@ class _RoutingModeChip extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({
-    required this.index,
-    required this.tokens,
-    required this.onTap,
-  });
-
-  final int index;
-  final ThemeTokens tokens;
-  final ValueChanged<int> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context)!;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.colorSurface,
-        boxShadow: [
-          BoxShadow(
-            color: tokens.colorMuted.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _BottomNavItem(
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home_rounded,
-              label: s.navHome,
-              isActive: index == 0,
-              onTap: () => onTap(0),
-              tokens: tokens,
-            ),
-            _BottomNavItem(
-              icon: Icons.dns_outlined,
-              activeIcon: Icons.dns_rounded,
-              label: s.navNodes,
-              isActive: index == 1,
-              onTap: () => onTap(1),
-              tokens: tokens,
-            ),
-            _BottomNavItem(
-              icon: Icons.settings_outlined,
-              activeIcon: Icons.settings_rounded,
-              label: s.navSettings,
-              isActive: index == 2,
-              onTap: () => onTap(2),
-              tokens: tokens,
-            ),
-            _BottomNavItem(
-              icon: Icons.person_outline,
-              activeIcon: Icons.person_rounded,
-              label: s.navMy,
-              isActive: index == 3,
-              onTap: () => onTap(3),
-              tokens: tokens,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  const _BottomNavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-    required this.tokens,
-  });
-
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-  final ThemeTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? tokens.colorPrimary : tokens.colorMuted,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? tokens.colorPrimary : tokens.colorMuted,
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
         ),
       ),
     );

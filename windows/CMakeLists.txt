@@ -87,6 +87,21 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     COMPONENT Runtime)
 endif()
 
+# HyenaCore — DLL 与 exe 同级，供 FFI 加载；libcronet 为 HyenaCore 依赖
+set(HYENA_NATIVE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/../native/libs/windows")
+if(EXISTS "${HYENA_NATIVE_WINDOWS}/HyenaCore.dll")
+  install(FILES
+    "${HYENA_NATIVE_WINDOWS}/HyenaCore.dll"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
+if(EXISTS "${HYENA_NATIVE_WINDOWS}/libcronet.dll")
+  install(FILES
+    "${HYENA_NATIVE_WINDOWS}/libcronet.dll"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"

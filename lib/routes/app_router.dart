@@ -14,6 +14,7 @@ import '../controllers/traffic_chart_controller.dart';
 import '../controllers/splash_controller.dart';
 import '../features/auth/auth_notifier.dart';
 import '../skins/skin_manager.dart';
+import '../platforms/mobile/widgets/mobile_shell.dart';
 
 // PaymentResult 类型定义
 class PaymentResult {
@@ -51,10 +52,8 @@ class AppRouter {
           path: '/splash',
           builder: (ctx, __) {
             final controller = ctx.read<SplashController>();
-            // 1. 尝试皮肤定制页面
             final skinPage = skinFactory.splashPage(controller);
             if (skinPage != null) return skinPage;
-            // 2. 使用平台适配页面
             return platformFactory.buildSplashPage(controller);
           },
         ),
@@ -85,33 +84,59 @@ class AppRouter {
             return platformFactory.buildForgotPasswordPage(controller);
           },
         ),
-        GoRoute(
-          path: '/home',
-          builder: (ctx, __) {
-            final controller = ctx.read<HomeController>();
-            final skinPage = skinFactory.homePage(controller);
-            if (skinPage != null) return skinPage;
-            return platformFactory.buildHomePage(controller);
-          },
+
+        // ── 主 Tab Shell（持久化底部导航栏）──
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) =>
+              MobileShell(navigationShell: navigationShell),
+          branches: [
+            StatefulShellBranch(routes: [
+              GoRoute(
+                path: '/home',
+                builder: (ctx, __) {
+                  final controller = ctx.read<HomeController>();
+                  final skinPage = skinFactory.homePage(controller);
+                  if (skinPage != null) return skinPage;
+                  return platformFactory.buildHomePage(controller);
+                },
+              ),
+            ]),
+            StatefulShellBranch(routes: [
+              GoRoute(
+                path: '/nodes',
+                builder: (ctx, __) {
+                  final controller = ctx.read<NodeController>();
+                  final skinPage = skinFactory.nodePage(controller);
+                  if (skinPage != null) return skinPage;
+                  return platformFactory.buildNodeListPage(controller);
+                },
+              ),
+            ]),
+            StatefulShellBranch(routes: [
+              GoRoute(
+                path: '/store',
+                builder: (ctx, __) {
+                  final controller = ctx.read<StoreController>();
+                  final skinPage = skinFactory.storePage(controller);
+                  if (skinPage != null) return skinPage;
+                  return platformFactory.buildStorePage(controller);
+                },
+              ),
+            ]),
+            StatefulShellBranch(routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (ctx, __) {
+                  final controller = ctx.read<ProfileController>();
+                  final skinPage = skinFactory.profilePage(controller);
+                  if (skinPage != null) return skinPage;
+                  return platformFactory.buildProfilePage(controller);
+                },
+              ),
+            ]),
+          ],
         ),
-        GoRoute(
-          path: '/nodes',
-          builder: (ctx, __) {
-            final controller = ctx.read<NodeController>();
-            final skinPage = skinFactory.nodePage(controller);
-            if (skinPage != null) return skinPage;
-            return platformFactory.buildNodeListPage(controller);
-          },
-        ),
-        GoRoute(
-          path: '/store',
-          builder: (ctx, __) {
-            final controller = ctx.read<StoreController>();
-            final skinPage = skinFactory.storePage(controller);
-            if (skinPage != null) return skinPage;
-            return platformFactory.buildStorePage(controller);
-          },
-        ),
+
         GoRoute(
           path: '/orders',
           builder: (ctx, __) {
@@ -151,12 +176,11 @@ class AppRouter {
           },
         ),
         GoRoute(
-          path: '/profile',
-          builder: (ctx, __) {
-            final controller = ctx.read<ProfileController>();
-            final skinPage = skinFactory.profilePage(controller);
-            if (skinPage != null) return skinPage;
-            return platformFactory.buildProfilePage(controller);
+          path: '/tickets/:id',
+          builder: (ctx, state) {
+            final id = int.parse(state.pathParameters['id']!);
+            final controller = ctx.read<TicketController>();
+            return platformFactory.buildTicketDetailPage(controller, id);
           },
         ),
         GoRoute(

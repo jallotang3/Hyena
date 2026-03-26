@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../../controllers/profile_controller.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../platforms/mobile/widgets/bottom_nav.dart';
+import '../../../skins/theme_token_provider.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key});
@@ -24,8 +26,13 @@ class _InviteScreenState extends State<InviteScreen> {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context)!;
+    final tokens = ThemeTokenProvider.tokensOf(context);
     return Scaffold(
       appBar: AppBar(title: Text(s.invite)),
+      bottomNavigationBar: MobileBottomNav(
+        activeTab: BottomNavTab.profile,
+        tokens: tokens,
+      ),
       body: Consumer<ProfileController>(
         builder: (_, ctrl, __) {
           if (ctrl.isLoading && ctrl.inviteSummary == null) {

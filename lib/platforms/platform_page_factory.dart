@@ -18,6 +18,10 @@ import 'mobile/pages/profile_page.dart';
 import 'mobile/pages/store_page.dart';
 import 'mobile/pages/order_center_page.dart';
 import 'mobile/pages/ticket_list_page.dart';
+import 'mobile/pages/ticket_detail_page.dart';
+import 'mobile/pages/login_page.dart';
+import 'mobile/pages/register_page.dart';
+import '../features/auth/screens/splash_screen.dart';
 
 /// 平台类型枚举
 enum PlatformType {
@@ -126,20 +130,17 @@ class MobilePageFactory extends PlatformPageFactory {
 
   @override
   Widget buildSplashPage(SplashController controller) {
-    // TODO: 实现移动端启动页
-    return _placeholder('Mobile Splash Page');
+    return const SplashScreen();
   }
 
   @override
   Widget buildLoginPage(AuthController controller) {
-    // TODO: 实现移动端登录页
-    return _placeholder('Mobile Login Page');
+    return MobileLoginPage(controller: controller);
   }
 
   @override
   Widget buildRegisterPage(AuthController controller) {
-    // TODO: 实现移动端注册页
-    return _placeholder('Mobile Register Page');
+    return MobileRegisterPage(controller: controller);
   }
 
   @override
@@ -192,8 +193,7 @@ class MobilePageFactory extends PlatformPageFactory {
 
   @override
   Widget buildTicketDetailPage(TicketController controller, int ticketId) {
-    // TODO: 实现移动端工单详情页
-    return _placeholder('Mobile Ticket Detail Page');
+    return MobileTicketDetailPage(controller: controller, ticketId: ticketId);
   }
 
   @override

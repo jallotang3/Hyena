@@ -30,6 +30,9 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
+  # HyenaCore gomobile xcframework（与 `native/libs/ios/HyenaCore.podspec`）
+  pod 'HyenaCore', :path => '../native/libs/ios'
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths

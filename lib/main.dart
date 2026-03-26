@@ -9,8 +9,10 @@ import 'infrastructure/logging/app_logger.dart';
 import 'adapters/panel/registry.dart';
 import 'adapters/panel/xboard/xboard_adapter.dart';
 import 'adapters/panel/v2board/v2board_adapter.dart';
+import 'dart:io';
 import 'adapters/engine/registry.dart';
 import 'adapters/engine/singbox/singbox_driver.dart';
+import 'adapters/engine/hyena/hyena_core_engine.dart';
 import 'features/auth/auth_notifier.dart';
 import 'features/auth/auth_use_case.dart';
 import 'features/connection/connection_use_case.dart';
@@ -64,8 +66,16 @@ Future<void> main() async {
   adapterRegistry.register(V2boardAdapter());
 
   final engineRegistry = EngineRegistry.instance;
-  final singboxDriver = SingboxDriver();
-  engineRegistry.register(singboxDriver);
+  // 桌面 + 移动：HyenaCoreEngine；Web 等无原生库时用 SingboxDriver stub
+  final coreEngine = (Platform.isMacOS ||
+          Platform.isWindows ||
+          Platform.isLinux ||
+          Platform.isAndroid ||
+          Platform.isIOS)
+      ? HyenaCoreEngine()
+      : SingboxDriver();
+  engineRegistry.register(coreEngine);
+  final singboxDriver = coreEngine;
 
   final site = PanelSite.fromBuildConfig();
   final adapter = adapterRegistry.resolve(site.panelType);
